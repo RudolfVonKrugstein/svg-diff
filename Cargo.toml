@@ -1,0 +1,30 @@
+[lib]
+# crate-type = ["cdylib"]
+
+[package]
+name = "svg-diff"
+version = "0.0.1"
+authors = ["nathan@wintercloud.de"]
+edition = "2021"
+
+[dependencies]
+svg = "0.10"
+svgtypes = "0"
+regex = "1"
+error-chain = "0.12"
+napi = "2"
+napi-derive = "2"
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+actix-web = "4"
+actix-files = "0"
+log = "0"
+env_logger = "0"
+mime = "0"
+random-string = "1"
+
+[build-dependencies]
+napi-build = "1"
+
+[features]
+node = []

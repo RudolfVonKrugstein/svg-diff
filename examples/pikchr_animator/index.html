@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<head>
+    <title>Demo page</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.1.0/svg.min.js" integrity="sha512-RUC8QNj6IGTOnZkzc/T+oSwFpNkVAVwW+ZRBkjJ3JWgOt12bBoWqddzPOMao2iTsvaWDox58rkjo20RvbH/4Mw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+<h1>SVG Animation Demo</h1>
+<button onclick="reset_animation()"><<</button>
+<button onclick="next_animation()">></button>
+<div id="content-container">
+</div>
+<script>
+    let animation_index = 0;
+    let all_diffs = [];
+    async function next_animation() {
+        if (animation_index >= all_diffs.length)
+        {
+            console.log("already at last animation")
+            return;
+        }
+        await set_base_svg(animation_index);
+        apply_animation(all_diffs[animation_index]);
+        animation_index = animation_index + 1;
+    }
+    async function reset_animation() {
+        animation_index = 0;
+        // Fetch basic svg
+        await set_base_svg(animation_index);
+    }
+
+    reset_animation();
+    // Fetch diffs
+    fetch('./diffs.json')
+        .then((response) => response.json())
+        .then((diffs) => {
+            all_diffs = diffs
+        });
+
+    async function set_base_svg(index) {
+        // Fetch basic svg
+        let response = await fetch(`./base${index}.svg`);
+        let svg = await response.text();
+        let target = document.getElementById("content-container");
+        target.innerHTML = svg;
+    }
+
+    function apply_animation(diffs) {
+        for (const diff of diffs) {
+            console.log("Diff:", diff);
+            switch (diff.action) {
+                case "remove":
+                    console.log("removing");
+                    let remove_element = document.getElementById(diff.id);
+                    remove_element.remove();
+                    break;
+                case "add":
+                    console.log("adding");
+                    let parent_element = document.getElementById(diff.parent_id);
+                    const children = parent_element.children;
+                    let insert_index = 0;
+                    if (diff.prev_child_id !== undefined) {
+                        for (let index = 0; index < children.length; ++index) {
+                            if (parent_element.children[index].id === diff.prev_child_id) {
+                                insert_index = index + 1;
+                                break;
+                            }
+                        }
+                    }
+                    // If we are inserted at the end, we pass null
+                    if (insert_index === children.length) {
+                        insert_index = null;
+                    }
+                    parent_element = SVG(parent_element);
+                    let new_element = SVG(diff.svg);
+                    parent_element.add(new_element, insert_index);
+                    new_element.attr('opacity', 0);
+                    new_element.animate(2000, 0, 'now').attr('opacity', 1);
+                    break;
+                case "change":
+                    console.log("change");
+                    let dom_element = document.getElementById(diff.id);
+                    let element = SVG(dom_element);
+                    for (remove of diff.removes) {
+                        dom_element.removeAttribute(remove.prop);
+                    }
+                    for (change of diff.changes) {
+                        if (change.prop === "transform") {
+                            element.animate(2000, 0, 'now').transform(change.value);
+                        } else {
+                            element.animate(2000, 0, 'now').attr(change.prop, change.value);
+                        }
+                    }
+                    for (add of diff.adds) {
+                        if (add.prop === "transform") {
+                            element.animate(2000, 0, 'now').transform(add.value);
+                        } else {
+                            element.animate(2000, 0, 'now').attr(add.prop, add.value);
+                        }
+                    }
+                    break;
+            }
+
+        }
+    }
+</script>
+</body>
