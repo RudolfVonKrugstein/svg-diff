@@ -98,7 +98,7 @@ async fn main() -> std::io::Result<()> {
     //     diff_strings.push(DiffStep::write_json(d).unwrap());
     // }
     let state = web::Data::new(AppState {
-        last_svg: Mutex::new("<svg></svg>".to_string()),
+        last_svg: Mutex::new("<svg viewBox=\"0 0 1 1\"></svg>".to_string()),
     });
 
     println!("Starting http server on http://127.0.0.1:8080");

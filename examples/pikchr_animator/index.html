@@ -93,7 +93,8 @@
                     }
                     break;
                 case "change_text":
-                    console.log(diff);
+                    let text_element = document.getElementById(diff.id);
+                    element.textContent = diff.new_text
                     break;
             }
 
