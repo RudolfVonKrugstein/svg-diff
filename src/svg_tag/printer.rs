@@ -1,5 +1,6 @@
 
 use svg::node::element::{Element, SVG};
+use svg::node::Text;
 use svg::{Node};
 use crate::SVGTag;
 
@@ -10,6 +11,9 @@ fn build_element(tag: &SVGTag) -> Element {
     }
     for child in &tag.children {
         el.append(build_element(child));
+    }
+    if tag.text.len() > 0 {
+        el.append(Text::new(&tag.text))
     }
     el
 }
