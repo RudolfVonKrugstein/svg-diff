@@ -28,3 +28,4 @@ pub use self::diff::diff_from_strings;
 pub use self::diff::diffs;
 
 pub use self::diff::DiffStep;
+pub use self::diff::JsonDiff;

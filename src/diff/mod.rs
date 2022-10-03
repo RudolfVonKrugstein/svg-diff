@@ -10,3 +10,5 @@ pub use self::diff::diffs;
 
 pub(crate) use self::matching_ids::MatchingState;
 pub use self::step::DiffStep;
+pub use self::step::JsonDiff;
+

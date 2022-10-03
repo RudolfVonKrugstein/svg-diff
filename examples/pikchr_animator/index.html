@@ -5,43 +5,35 @@
 </head>
 <body>
 <h1>SVG Animation Demo</h1>
-<button onclick="reset_animation()"><<</button>
-<button onclick="next_animation()">></button>
+<label for="diagram">Input Diagram</label>
+<br/>
+<textarea id="diagram" cols="50" rows="16">
+
+</textarea>
+<br/>
+<button onclick="next_diagram()">Send</button>
 <div id="content-container">
 </div>
 <script>
     let animation_index = 0;
     let all_diffs = [];
-    async function next_animation() {
-        if (animation_index >= all_diffs.length)
-        {
-            console.log("already at last animation")
+    async function next_diagram() {
+        let response = await fetch('./new_diagram', {
+            method: 'POST',
+            body: document.getElementById("diagram").value
+        });
+        if (!response.ok) {
+            console.log("error:", await response.text());
             return;
         }
-        await set_base_svg(animation_index);
-        apply_animation(all_diffs[animation_index]);
-        animation_index = animation_index + 1;
-    }
-    async function reset_animation() {
-        animation_index = 0;
-        // Fetch basic svg
-        await set_base_svg(animation_index);
-    }
-
-    reset_animation();
-    // Fetch diffs
-    fetch('./diffs.json')
-        .then((response) => response.json())
-        .then((diffs) => {
-            all_diffs = diffs
-        });
-
-    async function set_base_svg(index) {
-        // Fetch basic svg
-        let response = await fetch(`./base${index}.svg`);
-        let svg = await response.text();
-        let target = document.getElementById("content-container");
-        target.innerHTML = svg;
+        let result = await response.json();
+        if (result.svg !== undefined) {
+            let target = document.getElementById("content-container");
+            target.innerHTML = result.svg;
+        }
+        if (result.diffs !== undefined) {
+            apply_animation(result.diffs);
+        }
     }
 
     function apply_animation(diffs) {

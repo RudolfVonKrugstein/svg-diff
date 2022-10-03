@@ -156,14 +156,14 @@ impl DiffStep {
         })
     }
 
-    pub fn write_json(data: &Vec<DiffStep>) -> Result<String> {
+    pub fn write_json(data: &Vec<DiffStep>) -> Result<Vec<JsonDiff>> {
         // Create the json structure
         let json_structure: Vec<JsonDiff> = data.iter().map(
             |s| DiffStep::json_diff_from_step(s)
         ).collect::<Result<Vec<JsonDiff>>>()?;
 
         // And print it!
-        Ok(serde_json::to_string(&json_structure)?)
+        Ok(json_structure)
     }
 }
 
@@ -174,32 +174,32 @@ use crate::print_svg;
 use crate::svg_tag::attributes::SVGAttValue;
 
 #[derive(Serialize, Deserialize, Debug)]
-struct JsonAddDiff {
+pub struct JsonAddDiff {
     svg: String,
     parent_id: String,
     prev_child_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct JsonRemoveDiff {
+pub struct JsonRemoveDiff {
     id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct JsonMoveDiff {
+pub struct JsonMoveDiff {
     id: String,
     new_parent_id: String,
     new_prev_child_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct JsonPropWithValue {
+pub struct JsonPropWithValue {
     prop: String,
     value: SVGAttValue,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct JsonChangeDiff {
+pub struct JsonChangeDiff {
     id: String,
     adds: Vec<JsonPropWithValue>,
     changes: Vec<JsonPropWithValue>,
@@ -207,14 +207,14 @@ struct JsonChangeDiff {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct JsonChangeTextDiff {
+pub struct JsonChangeTextDiff {
     id: String,
     new_text: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "action")]
-enum JsonDiff {
+pub enum JsonDiff {
     #[serde(rename="add")]
     Add(JsonAddDiff),
     #[serde(rename="remove")]

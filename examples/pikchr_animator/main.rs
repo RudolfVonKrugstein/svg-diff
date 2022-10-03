@@ -1,42 +1,34 @@
 extern crate actix_web;
 extern crate env_logger;
 extern crate mime;
+extern crate pikchr;
+extern crate serde;
+extern crate serde_json;
 
 use mime::IMAGE_SVG;
 use actix_files::NamedFile;
-use actix_web::{get, web, App, HttpServer, Responder, Result, HttpResponse};
+use actix_web::{get, post, web, App, HttpServer, Responder, Result, HttpResponse};
 use std::path::Path;
 use std::fs;
+use std::string::FromUtf8Error;
+use std::sync::Mutex;
 use actix_web::cookie::time::format_description::parse;
 use actix_web::dev::Response;
 use actix_web::http::header::ContentType;
-use svg_diff::{DiffStep, parse_svg_string, print_svg};
+use actix_web::web::Bytes;
+use log::{debug, info};
+use svg_diff::{diff_from_strings, DiffStep, JsonDiff, parse_svg_string, print_svg};
+use pikchr::{Pikchr, PikchrFlags};
+use serde::Serialize;
 
-#[derive(Clone)]
 struct AppState {
-    base_svgs: Vec<String>,
-    diffs: Vec<String>,
-}
-
-// Function for finding the svg paths
-async fn find_svgs() -> Vec<String> {
-    for possible_path in vec!["./svgs", "./svg_animator/svgs", "./examples/svg_animator/svgs"] {
-        let path = Path::new(possible_path);
-        if path.exists() && path.is_dir() {
-            let mut res: Vec<String> = fs::read_dir(path).unwrap().map(
-                |f| f.unwrap().path().to_str().unwrap().to_string()
-            ).collect();
-            res.sort();
-            return res
-        }
-    }
-    return Vec::new();
+    last_svg: Mutex<String>
 }
 
 #[get("/")]
 async fn root() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in vec!["./index.html", "./svg_animator/index.html", "./examples/svg_animator/index.html"] {
+    for possible_path in vec!["./index.html", "./pikchr_animator/index.html", "./examples/pikchr_animator/index.html"] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }
@@ -44,55 +36,77 @@ async fn root() -> Result<NamedFile> {
     return Ok(NamedFile::open("./index.html")?);
 }
 
-#[get("/base{index}.svg")]
-async fn base_svg(path: web::Path<usize>, data: web::Data<AppState>) -> HttpResponse {
-    let index = path.into_inner();
-    if index > data.base_svgs.len() {
-        HttpResponse::NotFound().body("Index out of bound")
-    } else {
-        HttpResponse::Ok()
-            .content_type(mime::IMAGE_SVG)
-            .body(data.base_svgs.get(index).unwrap().clone())
-    }
+#[derive(Serialize)]
+struct ResultObject {
+    svg: String,
+    diffs: Vec<JsonDiff>,
 }
-#[get("/diffs.json")]
-async fn diffs(data: web::Data<AppState>) -> HttpResponse {
+
+#[post("/new_diagram")]
+async fn new_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpResponse {
+    // Convert the payload to svg
+    let input = match String::from_utf8(payload.to_vec()) {
+        Ok(s) => s,
+        Err(e) => return HttpResponse::BadRequest().body(e.to_string()),
+    };
+    let res = pikchr::Pikchr::render(input.as_str(), None, PikchrFlags::default());
+    let svg = match res {
+        Ok(p) => String::from_utf8(p.bytes().collect()).unwrap(),
+        Err(e) => return HttpResponse::BadRequest().body(e.to_string()),
+    };
+    if svg.contains("<!-- empty pikchr diagram -->") {
+        info!("empty diagram");
+        return HttpResponse::Ok().json("{}")
+    }
+
+    // Old svg
+    let mut old_svg = data.last_svg.lock().unwrap();
+    if (*old_svg).len() == 0 {
+        *old_svg = svg;
+        return HttpResponse::Ok().json("{}")
+    }
+    let start_svg = (*old_svg).clone();
+    *old_svg = svg.clone();
+
+    // Retrieve the old svg
+    let (new_svgs, diffs) = {
+        match diff_from_strings(&vec![start_svg, svg]) {
+            Ok(r) => r,
+            Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
+        }
+    };
+
+    info!("returning diffs");
     HttpResponse::Ok()
-        .content_type(mime::APPLICATION_JSON)
-        .body(format!("[{}]", data.diffs.join(",")))
+        .json(ResultObject {
+            svg: new_svgs[0].clone(),
+            diffs: DiffStep::write_json(&diffs[0]).unwrap(),
+        })
 }
 
 #[actix_web::main] // or #[tokio::main]
 async fn main() -> std::io::Result<()> {
     // Set the logger
     env_logger::init();
-    // Find and load the possible svg pathes
-    let svg_paths = find_svgs().await;
-    print!("Going to load: {:?}\n", svg_paths);
-    let svgs: Vec<String> = svg_paths.iter().map(
-        |p| fs::read_to_string(p).unwrap()
-    ).collect();
 
     // Create the base and diff
-    let (base_svgs, svg_diffs) = svg_diff::diff_from_strings(&svgs).unwrap();
+    // let (base_svgs, svg_diffs) = svg_diff::diff_from_strings(&svgs).unwrap();
 
     // Create state
-    let mut diff_strings = Vec::new();
-    for d in &svg_diffs {
-        diff_strings.push(DiffStep::write_json(d).unwrap());
-    }
-    let state = AppState {
-        base_svgs: base_svgs,
-        diffs: diff_strings
-    };
+    // let mut diff_strings = Vec::new();
+    // for d in &svg_diffs {
+    //     diff_strings.push(DiffStep::write_json(d).unwrap());
+    // }
+    let state = web::Data::new(AppState {
+        last_svg: Mutex::new("<svg></svg>".to_string()),
+    });
 
     println!("Starting http server on http://127.0.0.1:8080");
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(state.clone()))
+            .app_data(state.clone())
             .service(root)
-            .service(base_svg)
-            .service(diffs)
+            .service(new_diagram)
     })
         .bind(("127.0.0.1", 8080))?
         .run()

@@ -911,6 +911,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
 
 [[package]]
+name = "pikchr"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c0060934b0227a96428cbe79a42ad6d88cfbbc8490027bde64d12348948a6d2"
+dependencies = [
+ "cc",
+ "libc",
+]
+
+[[package]]
 name = "pin-project-lite"
 version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1157,6 +1167,7 @@ dependencies = [
  "napi",
  "napi-build",
  "napi-derive",
+ "pikchr",
  "random-string",
  "regex",
  "serde",
