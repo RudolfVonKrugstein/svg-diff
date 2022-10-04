@@ -15,6 +15,7 @@ use std::sync::Mutex;
 use actix_web::cookie::time::format_description::parse;
 use actix_web::dev::Response;
 use actix_web::http::header::ContentType;
+use actix_web::middleware::Logger;
 use actix_web::web::Bytes;
 use log::{debug, info};
 use svg_diff::{diff_from_strings, DiffStep, JsonDiff, parse_svg_string, print_svg};
@@ -34,6 +35,17 @@ async fn root() -> Result<NamedFile> {
         }
     }
     return Ok(NamedFile::open("./index.html")?);
+}
+
+#[get("/js/animator.js")]
+async fn animator_js() -> Result<NamedFile> {
+    // Serve one of the possible pathes ...
+    for possible_path in vec!["./js/animator.js", "./pikchr_animator/js/animator.js", "./examples/pikchr_animator/js/animator.js"] {
+        if Path::new(possible_path).exists() {
+            return Ok(NamedFile::open(possible_path)?);
+        }
+    }
+    return Ok(NamedFile::open("./js/animator.js")?);
 }
 
 #[derive(Serialize)]
@@ -104,8 +116,10 @@ async fn main() -> std::io::Result<()> {
     println!("Starting http server on http://127.0.0.1:8080");
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(state.clone())
             .service(root)
+            .service(animator_js)
             .service(new_diagram)
     })
         .bind(("127.0.0.1", 8080))?
