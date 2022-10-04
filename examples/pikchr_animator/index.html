@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <head>
     <title>Demo page</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.1.0/svg.min.js" integrity="sha512-RUC8QNj6IGTOnZkzc/T+oSwFpNkVAVwW+ZRBkjJ3JWgOt12bBoWqddzPOMao2iTsvaWDox58rkjo20RvbH/4Mw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.6.1/d3.min.js" integrity="sha512-MefNfAGJ/pEy89xLOFs3V6pYPs6AmUhXJrRlydI/9wZuGrqxmrdQ80zKHUcyadAcpH67teDZcBeS6oMJLPtTqw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="./js/animator.js"></script>
 </head>
 <body>
@@ -18,8 +18,8 @@
     </div>
 </div>
 <script>
-    let animation_index = 0;
-    let all_diffs = [];
+    load_base_svg("content-container");
+
     async function next_diagram() {
         let response = await fetch('./new_diagram', {
             method: 'POST',
@@ -31,7 +31,7 @@
         }
         let result = await response.json();
         if (result.svg !== undefined) {
-            load_base_svg("content-container", result.svg);
+            await load_base_svg("content-container", result.svg);
         }
         if (result.diffs !== undefined) {
             apply_animation(result.diffs);

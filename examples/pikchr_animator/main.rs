@@ -54,6 +54,14 @@ struct ResultObject {
     diffs: Vec<JsonDiff>,
 }
 
+#[get("/svg")]
+async fn get_svg(data: web::Data<AppState>) -> HttpResponse {
+    let mut old_svg = data.last_svg.lock().unwrap();
+    HttpResponse::Ok()
+        .content_type(mime::IMAGE_SVG)
+        .body((*old_svg).clone())
+}
+
 #[post("/new_diagram")]
 async fn new_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpResponse {
     // Convert the payload to svg
@@ -88,7 +96,6 @@ async fn new_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpResponse 
         }
     };
 
-    info!("returning diffs");
     HttpResponse::Ok()
         .json(ResultObject {
             svg: new_svgs[0].clone(),
@@ -119,6 +126,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .app_data(state.clone())
             .service(root)
+            .service(get_svg)
             .service(animator_js)
             .service(new_diagram)
     })

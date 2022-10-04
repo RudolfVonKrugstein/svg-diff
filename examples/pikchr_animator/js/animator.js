@@ -1,6 +1,17 @@
-function load_base_svg(container_id, svg_string) {
+async function load_base_svg(container_id, svg) {
+    if (svg === undefined) {
+        let response = await fetch('./svg');
+        svg = await response.text();
+    }
     let target = document.getElementById(container_id);
-    target.innerHTML = svg_string;
+    target.innerHTML = svg;
+}
+
+function html_to_svg_element(html) {
+    let template = document.createElementNS("http://www.w3.org/2000/svg",'svg');
+    html = html.trim();
+    template.innerHTML = html;
+    return template.firstChild;
 }
 
 function apply_animation(diffs) {
@@ -9,52 +20,51 @@ function apply_animation(diffs) {
         switch (diff.action) {
             case "remove":
                 console.log("removing");
-                let remove_element = document.getElementById(diff.id);
-                remove_element.remove();
+                d3.select('#' + diff.id)
+                    .attr("opacity", 1.0)
+                    .transition()
+                    .duration(1000)
+                    .attr("opacity", 0.0).remove();
                 break;
             case "add":
                 console.log("adding");
+                let new_element = html_to_svg_element(diff.svg);
                 let parent_element = document.getElementById(diff.parent_id);
-                const children = parent_element.children;
-                let insert_index = 0;
-                if (diff.prev_child_id !== undefined) {
-                    for (let index = 0; index < children.length; ++index) {
-                        if (parent_element.children[index].id === diff.prev_child_id) {
-                            insert_index = index + 1;
-                            break;
-                        }
-                    }
+                if (diff.next_child_id !== undefined) {
+                    parent_element.insertBefore(
+                        new_element,
+                        document.getElementById(diff.next_child_id)
+                    );
+                } else {
+                    parent_element.appendChild(new_element);
                 }
-                // If we are inserted at the end, we pass null
-                if (insert_index === children.length) {
-                    insert_index = null;
-                }
-                parent_element = SVG(parent_element);
-                let new_element = SVG(diff.svg);
-                parent_element.add(new_element, insert_index);
-                new_element.attr('opacity', 0);
-                new_element.animate(2000, 0, 'now').attr('opacity', 1);
+                let new_el = d3.select('#' + diff.id);
+                new_el.attr('opacity', 0.0);
+                new_el.transition()
+                    .duration(1000)
+                    .attr('opacity', 1.0);
+                // KUTE.fromTo(
+                //     '#' + diff.id,
+                //     {opacity:0},
+                //     {opacity:1}
+                // ).start();
                 break;
             case "change":
                 console.log("change");
+                let el = d3.select('#' + diff.id);
                 let dom_element = document.getElementById(diff.id);
-                let element = SVG(dom_element);
                 for (remove of diff.removes) {
-                    dom_element.removeAttribute(remove.prop);
+                    el.attr(remove, null)
                 }
-                for (change of diff.changes) {
-                    if (change.prop === "transform") {
-                        element.animate(2000, 0, 'now').transform(change.value);
-                    } else {
-                        element.animate(2000, 0, 'now').attr(change.prop, change.value);
-                    }
-                }
-                for (add of diff.adds) {
-                    if (add.prop === "transform") {
-                        element.animate(2000, 0, 'now').transform(add.value);
-                    } else {
-                        element.animate(2000, 0, 'now').attr(add.prop, add.value);
-                    }
+
+                let anim = el.transition().duration(1000);
+                for (change of diff.changes.concat(diff.adds)) {
+                    anim.attr(change.prop, change.value);
+                    // if (change.prop === "transform") {
+                    //     element.animate(2000, 0, 'now').transform(change.value);
+                    // } else {
+                    //     element.animate(2000, 0, 'now').attr(change.prop, change.value);
+                    // }
                 }
                 break;
             case "change_text":
