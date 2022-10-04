@@ -4,7 +4,7 @@
 [package]
 name = "svg-diff"
 version = "0.0.1"
-authors = ["nathan@wintercloud.de"]
+authors = ["Nathan Hüeksen <nathan@wintercloud.de>"]
 edition = "2021"
 description = "Find the diff between 2 SVGs in the form of a list of operations to get transform from one SVG to the other"
 keywords = ["svg", "diff"]
