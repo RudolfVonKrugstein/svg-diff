@@ -61,7 +61,7 @@ pub fn set_matching_ids(origin: &mut SVGTag, target: &mut SVGTag, g: &mut Matchi
 }
 
 pub fn print_matching_id_tree(tag: &SVGTag, level: usize) {
-    for i in 0..level {
+    for _i in 0..level {
         print!(" ")
     }
     print!("|{}\n", tag.matching.as_ref().unwrap().get_id());

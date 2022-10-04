@@ -1,4 +1,4 @@
-use svg::node::Value;
+
 use crate::diff::matching_ids::generator::MatchingIdGenerator;
 use crate::svg_tag::TreeHash;
 

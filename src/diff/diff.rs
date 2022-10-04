@@ -1,5 +1,5 @@
 use super::step::DiffStep;
-use crate::diff::matching_ids::{MatchingIdGenerator, print_matching_id_tree, set_matching_ids};
+use crate::diff::matching_ids::{MatchingIdGenerator, set_matching_ids};
 use crate::diff::tree_flatter::flat_tree_of_matched_tags;
 use crate::svg_tag::{Position, print_svg};
 use crate::{parse_svg_string, SVGTag};

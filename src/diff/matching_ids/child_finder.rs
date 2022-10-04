@@ -1,4 +1,4 @@
-use log::debug;
+
 use crate::diff::matching_ids::generator::MatchingIdGenerator;
 use crate::SVGTag;
 

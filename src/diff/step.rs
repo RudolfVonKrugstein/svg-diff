@@ -1,4 +1,4 @@
-use std::str::FromStr;
+
 
 use crate::diff::hashmap_diff::HashMapDiff;
 use crate::svg_tag::{print_svg_element, Position, SVGTag};
@@ -138,7 +138,7 @@ impl DiffStep {
                         }
                     ).collect(),
                     removes: cdiff.change.deletes.iter().map(
-                        |(prop, value)| prop.clone()
+                        |(prop, _value)| prop.clone()
                     ).collect(),
                 }
             ),
@@ -171,12 +171,12 @@ impl DiffStep {
 }
 
 use serde::{Serialize, Deserialize};
-use svg::node::Value;
-use svgtypes::{Color, Transform};
-use crate::print_svg;
+
+
+
 use crate::svg_tag::attributes::SVGAttValue;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonAddDiff {
     svg: String,
     id: String,
@@ -185,12 +185,12 @@ pub struct JsonAddDiff {
     next_child_id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonRemoveDiff {
     id: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonMoveDiff {
     id: String,
     new_parent_id: String,
@@ -198,13 +198,13 @@ pub struct JsonMoveDiff {
     new_next_child_id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonPropWithValue {
     prop: String,
     value: SVGAttValue,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonChangeDiff {
     id: String,
     adds: Vec<JsonPropWithValue>,
@@ -212,13 +212,13 @@ pub struct JsonChangeDiff {
     removes: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonChangeTextDiff {
     id: String,
     new_text: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "action")]
 pub enum JsonDiff {
     #[serde(rename="add")]

@@ -1,14 +1,14 @@
 use error_chain::bail;
 use std::collections::HashMap;
 use log::debug;
-use regex::{Regex, RegexBuilder};
+use regex::{RegexBuilder};
 
 use crate::errors::*;
 use svg::node::element::tag::Type;
 use svg::node::Value;
 use svg::parser::Event;
 use svg::Parser;
-use crate::svg_tag::treehash::TreeHash;
+
 use crate::svg_tag::SVGTag;
 
 pub fn parse_svg_string(input: &str) -> Result<SVGTag> {
