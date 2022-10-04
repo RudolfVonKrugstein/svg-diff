@@ -10,12 +10,12 @@ use std::fs;
 use actix_web::cookie::time::format_description::parse;
 use actix_web::dev::Response;
 use actix_web::http::header::ContentType;
-use svg_diff::{DiffStep, parse_svg_string, print_svg};
+use svg_diff::{DiffStep, JsonDiff, parse_svg_string, print_svg};
 
 #[derive(Clone)]
 struct AppState {
     base_svgs: Vec<String>,
-    diffs: Vec<String>,
+    diffs: Vec<Vec<JsonDiff>>,
 }
 
 // Function for finding the svg paths
@@ -59,7 +59,7 @@ async fn base_svg(path: web::Path<usize>, data: web::Data<AppState>) -> HttpResp
 async fn diffs(data: web::Data<AppState>) -> HttpResponse {
     HttpResponse::Ok()
         .content_type(mime::APPLICATION_JSON)
-        .body(format!("[{}]", data.diffs.join(",")))
+        .json(&data.diffs)
 }
 
 #[actix_web::main] // or #[tokio::main]

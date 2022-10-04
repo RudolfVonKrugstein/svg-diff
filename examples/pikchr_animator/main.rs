@@ -5,21 +5,21 @@ extern crate pikchr;
 extern crate serde;
 extern crate serde_json;
 
-use mime::IMAGE_SVG;
+
 use actix_files::NamedFile;
-use actix_web::{get, post, web, App, HttpServer, Responder, Result, HttpResponse};
+use actix_web::{get, post, web, App, HttpServer, Result, HttpResponse};
 use std::path::Path;
-use std::fs;
-use std::string::FromUtf8Error;
+
+
 use std::sync::Mutex;
-use actix_web::cookie::time::format_description::parse;
-use actix_web::dev::Response;
-use actix_web::http::header::ContentType;
+
+
+
 use actix_web::middleware::Logger;
 use actix_web::web::Bytes;
-use log::{debug, info};
-use svg_diff::{diff_from_strings, DiffStep, JsonDiff, parse_svg_string, print_svg};
-use pikchr::{Pikchr, PikchrFlags};
+use log::{info};
+use svg_diff::{diff_from_strings, DiffStep, JsonDiff};
+use pikchr::{PikchrFlags};
 use serde::Serialize;
 
 struct AppState {
@@ -56,7 +56,7 @@ struct ResultObject {
 
 #[get("/svg")]
 async fn get_svg(data: web::Data<AppState>) -> HttpResponse {
-    let mut old_svg = data.last_svg.lock().unwrap();
+    let old_svg = data.last_svg.lock().unwrap();
     HttpResponse::Ok()
         .content_type(mime::IMAGE_SVG)
         .body((*old_svg).clone())
