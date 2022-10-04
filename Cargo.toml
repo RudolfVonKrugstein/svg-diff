@@ -13,6 +13,12 @@ homepage = "https://github.com/RudolfVonKrugstein/svg-diff"
 documentation = "https://github.com/RudolfVonKrugstein/svg-diff"
 readme = "README.md"
 license = "MIT"
+exclude = [
+    ".idea/",
+    "node_modules",
+    "yarn.lock",
+    ".github"
+]
 
 [dependencies]
 svg = "0.10"
