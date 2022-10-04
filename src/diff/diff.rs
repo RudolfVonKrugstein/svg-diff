@@ -23,21 +23,21 @@ pub fn diff(origin: &mut SVGTag, target: &mut SVGTag) -> (SVGTag, SVGTag, Vec<Di
 
     // 1. Add unmatched tags in the target
     for (_id, item) in target_flat.iter() {
-        if item.1.matching.as_ref().unwrap().is_none() {
+        if item.1.matching.as_ref().unwrap().is_unmatched() {
             diff.push(DiffStep::add(item.1.clone(), item.0.clone()))
         }
     }
 
     // 2. remove unmatched tags
     for (_id, item) in origin_flat.iter() {
-        if item.1.matching.as_ref().unwrap().is_none() {
+        if item.1.matching.as_ref().unwrap().is_unmatched() {
             diff.push(DiffStep::remove(item.1));
         }
     }
 
     // 3. reorder items
     for (id, (pos, t_child)) in &target_flat {
-        if !t_child.matching.as_ref().unwrap().is_none() {
+        if !t_child.matching.as_ref().unwrap().is_unmatched() {
             if let Some((or_pos, _)) = &origin_flat.get(id) {
                 if or_pos != pos {
                     diff.push(DiffStep::move_element(id.clone(), pos.clone()));

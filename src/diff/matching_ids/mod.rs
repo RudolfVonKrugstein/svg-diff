@@ -1,3 +1,11 @@
+//! This modules is for creation and handling of Mathcing IDs.
+//!
+//! The purpose of Matching IDs is to store, which SVG Element
+//! in the original SVG has been matched to Elements in the target
+//! SVG.
+//!
+//! Matching Elements are found by different criteria (see `set_matching_ids`).
+
 mod child_finder;
 mod generator;
 mod matching_state;

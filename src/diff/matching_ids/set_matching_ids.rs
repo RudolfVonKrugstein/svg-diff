@@ -4,10 +4,52 @@ use crate::diff::matching_ids::generator::MatchingIdGenerator;
 use crate::diff::matching_ids::matching_state::MatchingState;
 use crate::SVGTag;
 
+/// Find tags between `origin` and `target` that match and give them the same Matching ID.
+/// These matching IDs can than later be used to find changes between the SVGs and generate the diff.
+///
+/// Iterates all childrens of both `origin` and `target` and find those which match based on their
+/// `TreeHash`.
+/// If children match, there are given the same matching ID and the algorithm also matches
+/// the children of these found children.
+///
+/// The algorithm does not find matching between arbitrary Tags in the Tree.
+/// Only if Tags match are the children also checked for matches.
+///
+/// The matches happen by the following priority (this with higher priority are preferred
+/// over possible matches with lower priority). See als the Documentation of `TreeHash`.
+///
+/// * Full match (identical nodes in very aspect). Even children are all in the same order.
+///   No matching IDs are given for children of these nodes.
+/// * Full match if children are reordered in the tree.
+/// * Match all but the text (with reorder).
+/// * Match all but the attributes (with reorder).
+/// * Match children with the same tag name.
+///
+/// NOTE: These criteria hold true for all tags in the Subtree.
+///       i.E. matching without attributes mean, that the full subtree matches if
+///       all attributes are ignored.
+///
+/// All children that remain are given Matching IDs that indicate that they are unmatched
+/// and have to be removed or added.
+///
+/// NOTE: Not all tags are given MatchingIds. Tags that are below:
+/// * Full matched nodes.
+/// * Removed or added nodes.
+/// Don't need a Matching ID and are not given one.
+///
+/// # Arguments
+///
+///  - origin - The first SVGTag tree to find matches in.
+///  - target - The second SVGTag tree to find matches in.
+///
+/// # Result
+///
+/// The function does not return anything, but modifies `origin` and `target` so that
+/// matching IDs are found.
 pub fn set_matching_ids(origin: &mut SVGTag, target: &mut SVGTag, g: &mut MatchingIdGenerator) {
     let id = MatchingState::new(
         g, &origin.hash, &target.hash, origin.args.get("id").map(|v| v.to_string())); // Next matching id
-    if id.is_none() {
+    if id.is_unmatched() {
         panic!("internal error, don't call set_matching_ids with non matching tags")
     }
     assert!(origin.matching.is_none());
@@ -25,21 +67,25 @@ pub fn set_matching_ids(origin: &mut SVGTag, target: &mut SVGTag, g: &mut Matchi
             set_matching_ids(o, t, g);
         }
     });
+    // Find matches with child reordering
     for_each_unmatched_child_pair(origin, target, g, |o, t, g| {
         if o.hash.eq_with_reorder(&t.hash) {
             set_matching_ids(o, t, g);
         }
     });
+    // Find matches without text
     for_each_unmatched_child_pair(origin, target, g, |o, t, g| {
         if o.hash.eq_without_text(&t.hash) {
             set_matching_ids(o, t, g);
         }
     });
+    // Find matches without attributes
     for_each_unmatched_child_pair(origin, target, g, |o, t, g| {
         if o.hash.eq_without_attr(&t.hash) {
             set_matching_ids(o, t, g);
         }
     });
+    // Find remaining matches simple by the tag name
     for_each_unmatched_child_pair(origin, target, g, |o, t, g| {
         if o.name == t.name {
             set_matching_ids(o, t, g);
@@ -60,6 +106,7 @@ pub fn set_matching_ids(origin: &mut SVGTag, target: &mut SVGTag, g: &mut Matchi
     });
 }
 
+/// Debug function to print the tree of matching ids.
 pub fn print_matching_id_tree(tag: &SVGTag, level: usize) {
     for _i in 0..level {
         print!(" ")
