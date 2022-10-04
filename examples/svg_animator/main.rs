@@ -2,15 +2,15 @@ extern crate actix_web;
 extern crate env_logger;
 extern crate mime;
 
-use mime::IMAGE_SVG;
+
 use actix_files::NamedFile;
-use actix_web::{get, web, App, HttpServer, Responder, Result, HttpResponse};
+use actix_web::{get, web, App, HttpServer, Result, HttpResponse};
 use std::path::Path;
 use std::fs;
-use actix_web::cookie::time::format_description::parse;
-use actix_web::dev::Response;
-use actix_web::http::header::ContentType;
-use svg_diff::{DiffStep, JsonDiff, parse_svg_string, print_svg};
+
+
+
+use svg_diff::{DiffStep, JsonDiff};
 
 #[derive(Clone)]
 struct AppState {
