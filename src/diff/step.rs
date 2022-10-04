@@ -116,8 +116,10 @@ impl DiffStep {
             DiffStep::Add(adiff) => JsonDiff::Add(
                 JsonAddDiff {
                     svg: print_svg_element(&adiff.tag),
+                    id: adiff.tag.matching.as_ref().unwrap().get_id(),
                     parent_id: adiff.position.parent_id.clone(),
                     prev_child_id: adiff.position.prev_child.clone(),
+                    next_child_id: adiff.position.next_child.clone(),
                 }
             ),
             DiffStep::ChangeProperties(cdiff) => JsonDiff::Change(
@@ -151,6 +153,7 @@ impl DiffStep {
                     id: mdiff.id.clone(),
                     new_parent_id: mdiff.new_position.parent_id.clone(),
                     new_prev_child_id: mdiff.new_position.prev_child.clone(),
+                    new_next_child_id: mdiff.new_position.next_child.clone(),
                 }
             )
         })
@@ -176,8 +179,10 @@ use crate::svg_tag::attributes::SVGAttValue;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct JsonAddDiff {
     svg: String,
+    id: String,
     parent_id: String,
     prev_child_id: Option<String>,
+    next_child_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -190,6 +195,7 @@ pub struct JsonMoveDiff {
     id: String,
     new_parent_id: String,
     new_prev_child_id: Option<String>,
+    new_next_child_id: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

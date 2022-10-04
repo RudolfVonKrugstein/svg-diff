@@ -3,6 +3,7 @@ pub struct Position {
     pub parent_id: String,
     pub child_index: usize,
     pub prev_child: Option<String>,
+    pub next_child: Option<String>,
 }
 
 impl PartialEq for Position {
@@ -17,6 +18,7 @@ impl Position {
             parent_id: "".to_string(),
             child_index: 0,
             prev_child: None,
+            next_child: None,
         }
     }
 }
