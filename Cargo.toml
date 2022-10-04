@@ -6,6 +6,13 @@ name = "svg-diff"
 version = "0.0.1"
 authors = ["nathan@wintercloud.de"]
 edition = "2021"
+description = "Find the diff between 2 SVGs in the form of a list of operations to get transform from one SVG to the other"
+keywords = ["svg", "diff"]
+repository = "https://github.com/RudolfVonKrugstein/svg-diff"
+homepage = "https://github.com/RudolfVonKrugstein/svg-diff"
+documentation = "https://github.com/RudolfVonKrugstein/svg-diff"
+readme = "README.md"
+license = "MIT"
 
 [dependencies]
 svg = "0.10"
