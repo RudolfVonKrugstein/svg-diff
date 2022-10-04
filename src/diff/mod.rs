@@ -9,6 +9,6 @@ pub use self::diff::diff_from_strings;
 pub use self::diff::diffs;
 
 pub(crate) use self::matching_ids::MatchingState;
-pub use self::step::DiffStep;
+pub use self::step::write_json_diff;
 pub use self::step::JsonDiff;
 

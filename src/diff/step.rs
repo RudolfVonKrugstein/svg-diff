@@ -159,20 +159,19 @@ impl DiffStep {
         })
     }
 
-    pub fn write_json(data: &Vec<DiffStep>) -> Result<Vec<JsonDiff>> {
-        // Create the json structure
-        let json_structure: Vec<JsonDiff> = data.iter().map(
-            |s| DiffStep::json_diff_from_step(s)
-        ).collect::<Result<Vec<JsonDiff>>>()?;
-
-        // And print it!
-        Ok(json_structure)
-    }
 }
 
 use serde::{Serialize, Deserialize};
 
+pub fn write_json_diff(data: &Vec<DiffStep>) -> Result<Vec<JsonDiff>> {
+    // Create the json structure
+    let json_structure: Vec<JsonDiff> = data.iter().map(
+        |s| DiffStep::json_diff_from_step(s)
+    ).collect::<Result<Vec<JsonDiff>>>()?;
 
+    // And print it!
+    Ok(json_structure)
+}
 
 use crate::svg_tag::attributes::SVGAttValue;
 

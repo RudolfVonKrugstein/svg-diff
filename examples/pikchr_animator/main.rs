@@ -18,7 +18,7 @@ use std::sync::Mutex;
 use actix_web::middleware::Logger;
 use actix_web::web::Bytes;
 use log::{info};
-use svg_diff::{diff_from_strings, DiffStep, JsonDiff};
+use svg_diff::{diff_from_strings, JsonDiff, write_json_diff};
 use pikchr::{PikchrFlags};
 use serde::Serialize;
 
@@ -99,7 +99,7 @@ async fn new_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpResponse 
     HttpResponse::Ok()
         .json(ResultObject {
             svg: new_svgs[0].clone(),
-            diffs: DiffStep::write_json(&diffs[0]).unwrap(),
+            diffs: write_json_diff(&diffs[0]).unwrap(),
         })
 }
 
