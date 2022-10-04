@@ -22,6 +22,8 @@ extern crate regex;
 mod diff;
 mod errors;
 mod svg_tag;
+mod flat_tree;
+
 pub use svg_tag::parse_svg_tag;
 pub use svg_tag::parse_svg_string;
 pub use svg_tag::SVGTag;
