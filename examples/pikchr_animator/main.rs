@@ -18,9 +18,9 @@ use std::sync::Mutex;
 use actix_web::middleware::Logger;
 use actix_web::web::Bytes;
 use log::{info};
-use svg_diff::{diff_from_strings, JsonDiff, write_json_diff};
 use pikchr::{PikchrFlags};
 use serde::Serialize;
+use svg_diff::{diff_from_strings, DiffStep};
 
 struct AppState {
     last_svg: Mutex<String>
@@ -51,7 +51,7 @@ async fn animator_js() -> Result<NamedFile> {
 #[derive(Serialize)]
 struct ResultObject {
     svg: String,
-    diffs: Vec<JsonDiff>,
+    diffs: Vec<DiffStep>,
 }
 
 #[get("/svg")]
@@ -99,7 +99,7 @@ async fn new_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpResponse 
     HttpResponse::Ok()
         .json(ResultObject {
             svg: new_svgs[0].clone(),
-            diffs: write_json_diff(&diffs[0]).unwrap(),
+            diffs: diffs[0].clone(),
         })
 }
 

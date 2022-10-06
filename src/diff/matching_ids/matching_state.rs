@@ -1,6 +1,6 @@
 
 use crate::diff::matching_ids::generator::MatchingIdGenerator;
-use crate::svg_tag::TreeHash;
+use crate::svg_data::TreeHash;
 
 /// Stores how a SVG element is matched to
 /// another element (in the corresponding diff between the SVGs).
@@ -19,6 +19,10 @@ use crate::svg_tag::TreeHash;
 #[derive(Debug, Clone)]
 pub(crate) struct MatchingState {
     matching_id: String,
+    // The index in the origin svg
+    origin_index: Option<usize>,
+    // Same for the target
+    target_index: Option<usize>,
     // The id of the match (is the same in both matching elements).
     no_changes: bool,
     // Nothing has changed, full subtree match
@@ -49,12 +53,14 @@ impl MatchingState {
     ///
     /// The `MatchingState` to be added to the Tags.
     /// Clone it to add it to both tags!
-    pub(crate) fn new(g: &mut MatchingIdGenerator, hash: &TreeHash, o_hash: &TreeHash, default_id: Option<String>) -> MatchingState {
+    pub(crate) fn new(g: &mut MatchingIdGenerator, origin_index: usize, target_index: usize, hash: &TreeHash, o_hash: &TreeHash, default_id: Option<String>) -> MatchingState {
         let no_changes = hash.eq_all(&o_hash);
         let subtree_changes = !no_changes;
         let internal_changes = !hash.eq_without_subtree(&o_hash);
         MatchingState {
             matching_id: g.next(default_id),
+            origin_index: Some(origin_index),
+            target_index: Some(target_index),
             no_changes,
             subtree_changes,
             internal_changes,
@@ -74,10 +80,12 @@ impl MatchingState {
     ///
     /// The `MatchingState` to be added to the Tag.
     /// Don't clone it, it should be added to only one tag!
-    pub(crate) fn new_unmatched(g: &mut MatchingIdGenerator, default_id: Option<String>) -> MatchingState {
+    pub(crate) fn new_unmatched(index: usize, is_origin: bool, g: &mut MatchingIdGenerator, default_id: Option<String>) -> MatchingState {
         MatchingState {
             matching_id: g.next(default_id),
             no_changes: false,
+            origin_index: if is_origin {Some(index)} else {None},
+            target_index: if is_origin {None} else {Some(index)},
             subtree_changes: false,
             internal_changes: false,
             no_match: true,
@@ -102,5 +110,13 @@ impl MatchingState {
     /// If this is true, it is an unmatched node.
     pub fn is_unmatched(&self) -> bool {
         self.no_match
+    }
+
+    // Return the indices
+    pub fn get_target_index(&self) -> Option<usize> {
+        self.target_index
+    }
+    pub fn get_origin_index(&self) -> Option<usize> {
+        self.origin_index
     }
 }

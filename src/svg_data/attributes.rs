@@ -1,3 +1,4 @@
+use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use serde::{Serialize, Deserialize};
 use svg::node::Value;
@@ -14,7 +15,15 @@ pub struct MatrixValue {
     a: f64, b: f64, c: f64, d: f64, e: f64, f: f64
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+// Don't use for indexing hash maps!
+// But this is good enough for comparing values for equality in our case.
+impl Hash for MatrixValue {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        format!("{:.8}{:.8}{:.8}{:.8}{:.8}{:.8}", self.a, self.b, self.c, self.d, self.e, self.f).hash(state);
+    }
+}
+
+#[derive(Serialize, Deserialize, Hash, Debug, Clone, PartialEq)]
 #[serde(untagged)]
 pub enum SVGAttValue {
     String(String),

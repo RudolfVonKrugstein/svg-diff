@@ -1,8 +1,9 @@
-use log::{debug, info};
-use crate::diff::matching_ids::child_finder::*;
+use log::{debug};
 use crate::diff::matching_ids::generator::MatchingIdGenerator;
 use crate::diff::matching_ids::matching_state::MatchingState;
-use crate::SVGTag;
+use crate::{SVG, svg_data};
+use crate::flat_tree::{NavigatorWithValues};
+use crate::svg_data::TreeHash;
 
 /// Find tags between `origin` and `target` that match and give them the same Matching ID.
 /// These matching IDs can than later be used to find changes between the SVGs and generate the diff.
@@ -39,82 +40,136 @@ use crate::SVGTag;
 ///
 /// # Arguments
 ///
-///  - origin - The first SVGTag tree to find matches in.
-///  - target - The second SVGTag tree to find matches in.
+///  - origin - The first SVG to find matches in.
+///  - target - The second SVG to find matches in.
 ///
 /// # Result
 ///
-/// The function does not return anything, but modifies `origin` and `target` so that
-/// matching IDs are found.
-pub fn set_matching_ids(origin: &mut SVGTag, target: &mut SVGTag, g: &mut MatchingIdGenerator) {
+/// An array for each of the svgs containing the matching IDs.
+/// The resulting arrays are indexed the same way as the tags in the SVGs.
+
+type SVGTreeHash<'a> = NavigatorWithValues<'a, svg_data::Tag, TreeHash>;
+
+pub(crate) fn get_matching_ids(
+    origin: &SVG,
+    target: &SVG,
+    g: &mut MatchingIdGenerator
+) -> (Vec<Option<MatchingState>>, Vec<Option<MatchingState>>) {
+    // Generate the treehashes
+    let origin_treehash = TreeHash::build_for_svg(origin);
+    let target_treehash = TreeHash::build_for_svg(target);
+
+    let origin_with_treehash = origin.with_values(&origin_treehash);
+    let target_with_treehash = target.with_values(&target_treehash);
+
+    // Make space for the result
+    let mut origin_ids = vec![None; origin.tags.count()];
+    let mut target_ids = vec![None; target.tags.count()];
+    set_matching_ids_rec(
+        &origin_with_treehash,
+        &target_with_treehash,
+        &mut origin_ids,
+        &mut target_ids,
+        g
+    );
+    (origin_ids, target_ids)
+}
+
+fn set_matching_ids_rec(
+    origin: &SVGTreeHash,
+    target: &SVGTreeHash,
+    origin_ids: &mut Vec<Option<MatchingState>>,
+    target_ids: &mut Vec<Option<MatchingState>>,
+    g: &mut MatchingIdGenerator) {
+
+    // Get the origin tag (which we use as a default)
+    let origin_id = origin.get_main().args.get("id").map(|a| a.to_string());
+
+    // Create the matching id
     let id = MatchingState::new(
-        g, &origin.hash, &target.hash, origin.args.get("id").map(|v| v.to_string())); // Next matching id
+        g,
+        origin.get_pos(),
+        target.get_pos(),
+        origin.get_extra(),
+        target.get_extra(),
+        origin_id);
     if id.is_unmatched() {
         panic!("internal error, don't call set_matching_ids with non matching tags")
     }
-    assert!(origin.matching.is_none());
-    assert!(target.matching.is_none());
+
     debug!("Setting matching for id {:?}", id);
-    origin.matching = Some(id.clone());
-    target.matching = Some(id.clone());
+    assert!(origin_ids[origin.get_pos()].is_none());
+    origin_ids[origin.get_pos()] = Some(id.clone());
+    assert!(target_ids[target.get_pos()].is_none());
+    target_ids[target.get_pos()] = Some(id.clone());
+
     if id.full_match() {
         // Match 100%
         return;
     }
+    // The criteria functions by decreasing strength
+    let criteria_functions: Vec<fn(&TreeHash, &TreeHash)->bool> = vec![
+        |o,t| o.eq_all(t),
+        |o,t| o.eq_with_reorder(t),
+        |o,t| o.eq_without_text(t),
+        |o,t| o.eq_without_attr(t),
+        |o,t| o.eq_only_tag(t),
+    ];
     // Find the child matches by all hashes
-    for_each_unmatched_child_pair(origin, target, g, |o, t, g| {
-        if o.hash.eq_all(&t.hash) {
-            set_matching_ids(o, t, g);
+    for criteria_function in criteria_functions {
+        while let Some((o_child, t_child)) = find_first_unmatched_child_pairs_that_matches(
+            origin, target,
+            origin_ids,
+            target_ids,
+            criteria_function,
+        ) {
+            set_matching_ids_rec(
+                &o_child,
+                &t_child,
+                origin_ids, target_ids,
+                g
+            );
         }
-    });
-    // Find matches with child reordering
-    for_each_unmatched_child_pair(origin, target, g, |o, t, g| {
-        if o.hash.eq_with_reorder(&t.hash) {
-            set_matching_ids(o, t, g);
+    }
+    // The rest remains unmatched
+    for o_child in origin.children() {
+        if origin_ids[o_child.get_pos()].is_none() {
+            let child_id = o_child.get_main().args.get("id").map(|a| a.to_string());
+            origin_ids[o_child.get_pos()] = Some(
+                MatchingState::new_unmatched(o_child.get_pos(), true, g, child_id)
+            )
         }
-    });
-    // Find matches without text
-    for_each_unmatched_child_pair(origin, target, g, |o, t, g| {
-        if o.hash.eq_without_text(&t.hash) {
-            set_matching_ids(o, t, g);
+    }
+    for t_child in target.children() {
+        if target_ids[t_child.get_pos()].is_none() {
+            let child_id = t_child.get_main().args.get("id").map(|a| a.to_string());
+            target_ids[t_child.get_pos()] = Some(
+                MatchingState::new_unmatched(t_child.get_pos(), false, g, child_id)
+            )
         }
-    });
-    // Find matches without attributes
-    for_each_unmatched_child_pair(origin, target, g, |o, t, g| {
-        if o.hash.eq_without_attr(&t.hash) {
-            set_matching_ids(o, t, g);
-        }
-    });
-    // Find remaining matches simple by the tag name
-    for_each_unmatched_child_pair(origin, target, g, |o, t, g| {
-        if o.name == t.name {
-            set_matching_ids(o, t, g);
-        }
-    });
-    // Set the rest unmatched!
-    for_each_unmatched_child(origin, g, |t, g| {
-        t.matching = Some(
-            MatchingState::new_unmatched(g, t.args.get("id").map(|v| v.to_string()))
-        );
-        info!("Unmatched matching id: {:?}\n", t.matching)
-    });
-    for_each_unmatched_child(target, g, |t, g| {
-        t.matching = Some(
-            MatchingState::new_unmatched(g, None)
-        );
-        info!("Unmatched matching id: {:?}\n", t.matching)
-    });
+    }
 }
 
-/// Debug function to print the tree of matching ids.
-pub fn print_matching_id_tree(tag: &SVGTag, level: usize) {
-    for _i in 0..level {
-        print!(" ")
-    }
-    print!("|{}\n", tag.matching.as_ref().unwrap().get_id());
-    if tag.matching.as_ref().unwrap().changes_in_subtree() {
-        for c in &tag.children {
-            print_matching_id_tree(c, level + 1);
-        }
-    }
+fn find_first_unmatched_child_pairs_that_matches<'a, F>(
+    a: &SVGTreeHash<'a>,
+    b: &SVGTreeHash<'a>,
+    origin_ids: &mut Vec<Option<MatchingState>>, target_ids: &mut Vec<Option<MatchingState>>,
+    test :F,
+) -> Option<(SVGTreeHash<'a>, SVGTreeHash<'a>)>
+    where F: Fn(&TreeHash, &TreeHash) -> bool
+{
+   for a_child in a.children() {
+       if origin_ids[a_child.get_pos()].is_some() {
+           continue;
+       };
+       for b_child in b.children() {
+           if target_ids[b_child.get_pos()].is_some() {
+               continue;
+           };
+           if test(a_child.get_extra(), b_child.get_extra()) {
+               return Some((a_child, b_child))
+           }
+       }
+   }
+   None
 }

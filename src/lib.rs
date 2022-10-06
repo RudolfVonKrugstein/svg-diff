@@ -21,17 +21,13 @@ extern crate regex;
 
 mod diff;
 mod errors;
-mod svg_tag;
 mod flat_tree;
+mod svg_data;
 
-pub use svg_tag::parse_svg_tag;
-pub use svg_tag::parse_svg_string;
-pub use svg_tag::SVGTag;
-pub use svg_tag::print_svg;
+pub use svg_data::SVG;
+pub use svg_data::print_svg;
 
 pub use self::diff::diff;
 pub use self::diff::diff_from_strings;
 pub use self::diff::diffs;
-
-pub use self::diff::JsonDiff;
-pub use self::diff::write_json_diff;
+pub use self::diff::DiffStep;

@@ -1,76 +1,139 @@
-
-
+use serde::{Serialize, Deserialize};
 use crate::diff::hashmap_diff::HashMapDiff;
-use crate::svg_tag::{print_svg_element, Position, SVGTag};
-use crate::errors::*;
+use crate::flat_tree::FlatTreeNeighbors;
+use crate::svg_data::{print_svg_element, SVGWithIDs};
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RemoveDiff {
     id: String,
+    parent_id: String,
+    prev_child_id: Option<String>,
+    next_child_id: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AddDiff {
+    svg: String,
     id: String,
-    tag: SVGTag,
-    position: Position,
+    parent_id: String,
+    prev_child_id: Option<String>,
+    next_child_id: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct MoveDiff {
     id: String,
-    new_position: Position,
+    new_parent_id: String,
+    new_prev_child_id: Option<String>,
+    new_next_child_id: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ChangedProperty {
+    prop: String,
+    start: String,
+    end: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Property {
+    prop: String,
+    value: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChangePropertiesDiff {
     id: String,
-    change: HashMapDiff<String>,
+    adds: Vec<Property>,
+    removes: Vec<Property>,
+    changes: Vec<ChangedProperty>,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ChangeTextDiff {
     id: String,
     new_text: String,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "action")]
 pub enum DiffStep {
     // Remove a node
+    #[serde(rename="remove")]
     Remove(RemoveDiff),
     // Add
+    #[serde(rename="add")]
     Add(AddDiff),
     // Change the properties of a tag
+    #[serde(rename="change")]
     ChangeProperties(ChangePropertiesDiff),
+    #[serde(rename="change_text")]
     ChangeText(ChangeTextDiff),
+    #[serde(rename="move")]
     Move(MoveDiff),
 }
 
 impl DiffStep {
-    pub fn remove(tag: &SVGTag) -> DiffStep {
+    pub fn remove(position: FlatTreeNeighbors<String>) -> DiffStep {
         DiffStep::Remove(RemoveDiff {
-            id: tag.matching.as_ref().unwrap().get_id(),
+            id: position.me.unwrap(),
+            parent_id: position.parent.unwrap(),
+            prev_child_id: position.prev_sibling,
+            next_child_id: position.next_sibling
         })
     }
 
-    pub fn add(tag: SVGTag, position: Position) -> DiffStep {
+    pub fn add(svg: &SVGWithIDs, position: FlatTreeNeighbors<String>) -> DiffStep {
         DiffStep::Add(AddDiff {
-            id: tag.matching.as_ref().unwrap().get_id(),
-            tag,
-            position,
+            svg: print_svg_element(svg),
+            id: position.me.unwrap(),
+            parent_id: position.parent.unwrap(),
+            prev_child_id: position.prev_sibling,
+            next_child_id: position.next_sibling
         })
     }
 
     pub fn change(id: String, change: HashMapDiff<String>) -> DiffStep {
-        DiffStep::ChangeProperties(ChangePropertiesDiff { id, change })
+        let adds = change.adds.iter().map(
+            |(prop, val)| Property {
+                prop: prop.clone(),
+                value: val.to_string(),
+            }
+        ).collect();
+        let removes = change.deletes.iter().map(
+            |(prop, val)| Property {
+                prop: prop.clone(),
+                value: val.to_string(),
+            }
+        ).collect();
+        let changes = change.changes.iter().map(
+            |(prop, (from, to))| ChangedProperty {
+                prop: prop.clone(),
+                start: from.to_string(),
+                end: to.to_string(),
+            }
+        ).collect();
+        DiffStep::ChangeProperties(
+            ChangePropertiesDiff {
+                id,
+                adds,
+                removes,
+                changes
+            })
     }
 
     pub fn text_change(id: String, new_text: String) -> DiffStep {
         DiffStep::ChangeText(ChangeTextDiff{id, new_text})
     }
 
-    pub fn move_element(id: String, new_position: Position) -> DiffStep {
-        DiffStep::Move(MoveDiff{id, new_position})
+    pub fn move_element(id: String, new_position: FlatTreeNeighbors<String>) -> DiffStep {
+        DiffStep::Move(
+            MoveDiff {
+                id,
+                new_parent_id: new_position.parent.unwrap(),
+                new_next_child_id: new_position.next_sibling,
+                new_prev_child_id: new_position.prev_sibling,
+            })
     }
 
     pub fn is_add(&self) -> bool {
@@ -107,127 +170,4 @@ impl DiffStep {
             _ => false,
         }
     }
-
-    fn json_diff_from_step(s: &DiffStep) -> Result<JsonDiff> {
-        Ok(match s {
-            DiffStep::Remove(rdiff) => JsonDiff::Remove(JsonRemoveDiff {
-                id: rdiff.id.clone(),
-            }),
-            DiffStep::Add(adiff) => JsonDiff::Add(
-                JsonAddDiff {
-                    svg: print_svg_element(&adiff.tag),
-                    id: adiff.tag.matching.as_ref().unwrap().get_id(),
-                    parent_id: adiff.position.parent_id.clone(),
-                    prev_child_id: adiff.position.prev_child.clone(),
-                    next_child_id: adiff.position.next_child.clone(),
-                }
-            ),
-            DiffStep::ChangeProperties(cdiff) => JsonDiff::Change(
-                JsonChangeDiff {
-                    id: cdiff.id.clone(),
-                    adds: cdiff.change.adds.iter().map(
-                        |(prop, value)| JsonPropWithValue {
-                            prop: prop.clone(),
-                            value: value.clone()
-                        }
-                    ).collect(),
-                    changes: cdiff.change.changes.iter().map(
-                        |(prop, value)| JsonPropWithValue {
-                            prop: prop.clone(),
-                            value: value.1.clone()
-                        }
-                    ).collect(),
-                    removes: cdiff.change.deletes.iter().map(
-                        |(prop, _value)| prop.clone()
-                    ).collect(),
-                }
-            ),
-            DiffStep::ChangeText(tdiff) => JsonDiff::ChangeText(
-                JsonChangeTextDiff {
-                    id: tdiff.id.clone(),
-                    new_text: tdiff.new_text.clone(),
-                }
-            ),
-            DiffStep::Move(mdiff) => JsonDiff::Move(
-                JsonMoveDiff {
-                    id: mdiff.id.clone(),
-                    new_parent_id: mdiff.new_position.parent_id.clone(),
-                    new_prev_child_id: mdiff.new_position.prev_child.clone(),
-                    new_next_child_id: mdiff.new_position.next_child.clone(),
-                }
-            )
-        })
-    }
-
-}
-
-use serde::{Serialize, Deserialize};
-
-pub fn write_json_diff(data: &Vec<DiffStep>) -> Result<Vec<JsonDiff>> {
-    // Create the json structure
-    let json_structure: Vec<JsonDiff> = data.iter().map(
-        |s| DiffStep::json_diff_from_step(s)
-    ).collect::<Result<Vec<JsonDiff>>>()?;
-
-    // And print it!
-    Ok(json_structure)
-}
-
-use crate::svg_tag::attributes::SVGAttValue;
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JsonAddDiff {
-    svg: String,
-    id: String,
-    parent_id: String,
-    prev_child_id: Option<String>,
-    next_child_id: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JsonRemoveDiff {
-    id: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JsonMoveDiff {
-    id: String,
-    new_parent_id: String,
-    new_prev_child_id: Option<String>,
-    new_next_child_id: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JsonPropWithValue {
-    prop: String,
-    value: SVGAttValue,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JsonChangeDiff {
-    id: String,
-    adds: Vec<JsonPropWithValue>,
-    changes: Vec<JsonPropWithValue>,
-    removes: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JsonChangeTextDiff {
-    id: String,
-    new_text: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "action")]
-pub enum JsonDiff {
-    #[serde(rename="add")]
-    Add(JsonAddDiff),
-    #[serde(rename="remove")]
-    Remove(JsonRemoveDiff),
-    #[serde(rename="move")]
-    Move(JsonMoveDiff),
-    #[serde(rename="change")]
-    Change(JsonChangeDiff),
-    #[serde(rename="change_text")]
-    ChangeText(JsonChangeTextDiff),
 }

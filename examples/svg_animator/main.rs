@@ -7,15 +7,14 @@ use actix_files::NamedFile;
 use actix_web::{get, web, App, HttpServer, Result, HttpResponse};
 use std::path::Path;
 use std::fs;
+use svg_diff::DiffStep;
 
 
-
-use svg_diff::{DiffStep, JsonDiff};
 
 #[derive(Clone)]
 struct AppState {
     base_svgs: Vec<String>,
-    diffs: Vec<Vec<JsonDiff>>,
+    diffs: Vec<Vec<DiffStep>>,
 }
 
 // Function for finding the svg paths
@@ -77,13 +76,9 @@ async fn main() -> std::io::Result<()> {
     let (base_svgs, svg_diffs) = svg_diff::diff_from_strings(&svgs).unwrap();
 
     // Create state
-    let mut diff_strings = Vec::new();
-    for d in &svg_diffs {
-        diff_strings.push(DiffStep::write_json(d).unwrap());
-    }
     let state = AppState {
         base_svgs: base_svgs,
-        diffs: diff_strings
+        diffs: svg_diffs,
     };
 
     println!("Starting http server on http://127.0.0.1:8080");
