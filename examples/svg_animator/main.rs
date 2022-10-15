@@ -16,9 +16,11 @@ struct AppState {
 
 // Function for finding the svg paths
 async fn find_svgs() -> Vec<String> {
-    for possible_path in &["./svgs",
+    for possible_path in &[
+        "./svgs",
         "./svg_animator/svgs",
-        "./examples/svg_animator/svgs"] {
+        "./examples/svg_animator/svgs",
+    ] {
         let path = Path::new(possible_path);
         if path.exists() && path.is_dir() {
             let mut res: Vec<String> = fs::read_dir(path)
@@ -35,9 +37,11 @@ async fn find_svgs() -> Vec<String> {
 #[get("/")]
 async fn root() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in &["./index.html",
+    for possible_path in &[
+        "./index.html",
         "./svg_animator/index.html",
-        "./examples/svg_animator/index.html"] {
+        "./examples/svg_animator/index.html",
+    ] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }
@@ -66,9 +70,11 @@ async fn diffs(data: web::Data<AppState>) -> HttpResponse {
 #[get("/js_assets/animator.js")]
 async fn animator_js() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in &["./examples/pikchr_animator/js_assets/animator.js",
+    for possible_path in &[
+        "./examples/pikchr_animator/js_assets/animator.js",
         "../js_assets/animator.js",
-        "./examples/js_assets/animator.js"] {
+        "./examples/js_assets/animator.js",
+    ] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }

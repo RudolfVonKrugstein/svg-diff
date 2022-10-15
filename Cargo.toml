@@ -28,7 +28,7 @@ log = "0"
 env_logger = "0"
 mime = "0"
 random-string = "1"
-flange-flat-tree = { path = "../flange-flat-tree-rs" }
+flange-flat-tree = "0.2"
 
 [build-dependencies]
 napi-build = "2"

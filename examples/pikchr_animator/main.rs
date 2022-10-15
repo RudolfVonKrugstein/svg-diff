@@ -25,9 +25,11 @@ struct AppState {
 #[get("/")]
 async fn root() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in &["./index.html",
+    for possible_path in &[
+        "./index.html",
         "./pikchr_animator/index.html",
-        "./examples/pikchr_animator/index.html"] {
+        "./examples/pikchr_animator/index.html",
+    ] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }
@@ -38,9 +40,11 @@ async fn root() -> Result<NamedFile> {
 #[get("/js_assets/animator.js")]
 async fn animator_js() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in &["./examples/pikchr_animator/js_assets/animator.js",
+    for possible_path in &[
+        "./examples/pikchr_animator/js_assets/animator.js",
         "../js_assets/animator.js",
-        "./examples/js_assets/animator.js"] {
+        "./examples/js_assets/animator.js",
+    ] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }
