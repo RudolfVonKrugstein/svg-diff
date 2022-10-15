@@ -6,6 +6,7 @@ use svg::Parser;
 
 use super::Tag;
 use super::TreeHash;
+use crate::diff::MatchingState;
 use crate::errors::*;
 use flange_flat_tree::Builder;
 use flange_flat_tree::VecTree;
@@ -15,6 +16,8 @@ pub struct SVG {
 }
 
 pub type SVGWithIDs<'a> = flange_flat_tree::FlangedTree<&'a VecTree<Tag>, Option<String>>;
+pub(crate) type SVGWithMatchingState<'a> =
+    flange_flat_tree::FlangedTree<&'a VecTree<Tag>, Option<MatchingState>>;
 pub type SVGWithTreeHash<'a> = flange_flat_tree::FlangedTree<&'a VecTree<Tag>, TreeHash>;
 pub type SVGWithTreeHashSubtree<'a> =
     <flange_flat_tree::FlangedTree<&'a VecTree<Tag>, TreeHash> as Tree<'a>>::SubtreeType;
@@ -22,6 +25,13 @@ pub type SVGWithTreeHashSubtree<'a> =
 impl SVG {
     pub fn with_ids(&self, ids: Vec<Option<String>>) -> SVGWithIDs {
         self.tags.flange(ids)
+    }
+
+    pub(crate) fn with_matching_states(
+        &self,
+        states: Vec<Option<MatchingState>>,
+    ) -> SVGWithMatchingState {
+        self.tags.flange(states)
     }
 
     pub fn parse_svg_string(input: &str) -> Result<SVG> {

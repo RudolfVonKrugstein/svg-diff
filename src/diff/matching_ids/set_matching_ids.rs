@@ -1,5 +1,5 @@
 use crate::diff::matching_ids::{generator::MatchingIdGenerator, matching_state::MatchingState};
-use crate::svg_data::{SVGWithTreeHashSubtree, TreeHash};
+use crate::svg_data::{SVGWithMatchingState, SVGWithTreeHashSubtree, TreeHash};
 use crate::SVG;
 use flange_flat_tree::{Subtree, Tree};
 use log::debug;
@@ -47,11 +47,11 @@ use log::debug;
 /// An array for each of the svgs containing the matching IDs.
 /// The resulting arrays are indexed the same way as the tags in the SVGs.
 
-pub(crate) fn get_matching_ids(
-    origin: &SVG,
-    target: &SVG,
+pub(crate) fn get_matching_ids<'a>(
+    origin: &'a SVG,
+    target: &'a SVG,
     g: &mut MatchingIdGenerator,
-) -> (Vec<Option<MatchingState>>, Vec<Option<MatchingState>>) {
+) -> (SVGWithMatchingState<'a>, SVGWithMatchingState<'a>) {
     // Generate the treehashes
     let origin_with_treehash = TreeHash::build_for_svg(origin);
     let target_with_treehash = TreeHash::build_for_svg(target);
@@ -66,7 +66,10 @@ pub(crate) fn get_matching_ids(
         &mut target_ids,
         g,
     );
-    (origin_ids, target_ids)
+    (
+        origin.with_matching_states(origin_ids),
+        target.with_matching_states(target_ids),
+    )
 }
 
 fn set_matching_ids_rec(

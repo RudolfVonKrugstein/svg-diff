@@ -13,113 +13,128 @@ pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (SVGWithIDs, SVGWithIDs, Ve
 
     // Match using tagging ids
     let mut g = MatchingIdGenerator::new();
-    let (origin_states, target_states) = get_matching_ids(origin, target, &mut g);
-    let origin_ids: Vec<Option<String>> = origin_states
-        .iter()
-        .map(|s| s.as_ref().map(|m| m.get_id()))
-        .collect();
-    let target_ids: Vec<Option<String>> = target_states
-        .iter()
-        .map(|s| s.as_ref().map(|m| m.get_id()))
-        .collect();
+    let (origin_with_states, target_with_states) = get_matching_ids(origin, target, &mut g);
 
     // Build the svg with ids
     // let origin_with_ids = origin.with_ids(&origin_ids);
-    let target_with_ids = target.with_ids(target_ids);
-    let origin_with_ids = origin.with_ids(origin_ids);
+    let target_with_ids =
+        target_with_states.replace_map_flange(|s| s.1.as_ref().map(|s| s.get_id()));
+    let origin_with_ids =
+        origin_with_states.replace_map_flange(|s| s.1.as_ref().map(|s| s.get_id()));
 
     // 1. Add unmatched tags in the target
-    for (index, state) in target_states.iter().enumerate() {
-        if state.as_ref().map(|s| s.is_unmatched()).unwrap_or(false) {
-            diff.push(DiffStep::add(&target_with_ids.at_pos(index)))
-        }
-    }
+    target_with_states.for_each(|s| {
+        if s.value()
+            .1
+            .as_ref()
+            .map(|s| s.is_unmatched())
+            .unwrap_or(false)
+        {
+            diff.push(DiffStep::add(&target_with_ids.at_pos(s.get_pos())))
+        };
+    });
 
     // 2. remove unmatched tags
-    for (index, state) in origin_states.iter().enumerate() {
-        if state.as_ref().map(|s| s.is_unmatched()).unwrap_or(false) {
-            diff.push(DiffStep::remove(&origin_with_ids.at_pos(index)))
+    origin_with_states.for_each(|s| {
+        if s.value()
+            .1
+            .as_ref()
+            .map(|s| s.is_unmatched())
+            .unwrap_or(false)
+        {
+            diff.push(DiffStep::remove(&origin_with_ids.at_pos(s.get_pos())))
         }
-    }
+    });
 
     // 3. reorder items
-    for (_target_index, id) in target_states.iter().enumerate() {
-        if let Some(id) = id {
-            if id.changes_in_subtree() {
-                if let Some(origin_index) = id.get_origin_index() {
+    target_with_states.for_each(|s| {
+        if let Some(target_state) = s.value().1 {
+            if target_state.changes_in_subtree() {
+                if let Some(origin_index) = target_state.get_origin_index() {
                     // Get the ids of both origin and target, that have not been removed or added
                     let mut current_childs = Vec::new();
-                    for child in origin_with_ids.at_pos(origin_index).children() {
-                        if !origin_states[child.get_pos()]
-                            .as_ref()
-                            .unwrap()
-                            .is_unmatched()
-                        {
+                    for child in origin_with_states.at_pos(origin_index).children() {
+                        if !child.value().1.as_ref().unwrap().is_unmatched() {
                             current_childs.push(child);
                         }
                     }
                     let mut target_childs = Vec::new();
-                    for child in target_with_ids.at_pos(origin_index).children() {
-                        if !target_states[child.get_pos()]
-                            .as_ref()
-                            .unwrap()
-                            .is_unmatched()
-                        {
+                    for child in s.children() {
+                        if !child.value().1.as_ref().unwrap().is_unmatched() {
                             target_childs.push(child);
                         }
                     }
                     assert!(current_childs.len() == target_childs.len());
-                    // Find those, that don't match!
+                    // Find those, that don't match (that means must be reordered)!
                     let mut unmatched_indices = Vec::new();
                     for (index, target_child) in target_childs.into_iter().enumerate() {
-                        if current_childs[index].value().1.as_ref().unwrap()
-                            != target_child.value().1.as_ref().unwrap()
+                        if current_childs[index]
+                            .value()
+                            .1
+                            .as_ref()
+                            .unwrap()
+                            .get_target_index()
+                            .unwrap()
+                            != target_child.get_pos()
                         {
-                            // modified the origin child ids to match
-                            let swap_index = {
-                                current_childs
-                                    .iter()
-                                    .enumerate()
-                                    .find(|(_index, child)| {
-                                        child.value().1.as_ref().unwrap()
-                                            == target_child.value().1.as_ref().unwrap()
-                                    })
-                                    .unwrap()
-                                    .0
-                            };
-                            // Swap the indices
-                            current_childs.swap(swap_index, index);
-                            // Remember the target child
-                            unmatched_indices.push(target_child);
+                            {
+                                // modified the origin child ids to match
+                                let swap_index = {
+                                    current_childs
+                                        .iter()
+                                        .enumerate()
+                                        .find(|(_index, child)| {
+                                            child
+                                                .value()
+                                                .1
+                                                .as_ref()
+                                                .unwrap()
+                                                .get_target_index()
+                                                .unwrap()
+                                                == target_child.get_pos()
+                                        })
+                                        .unwrap()
+                                        .0
+                                };
+                                // Swap the indices
+                                current_childs.swap(swap_index, index);
+                                // Remember the target child
+                                unmatched_indices.push(target_child);
+                            }
                         }
                     }
                     // Push those unmatched indices
                     for target in unmatched_indices {
-                        diff.push(DiffStep::move_element(&target));
+                        diff.push(DiffStep::move_element(
+                            &target_with_ids.at_pos(target.get_pos()),
+                        ));
                     }
                 }
             }
         }
-    }
+    });
 
     // 4. finally change items
-    for (target_index, id) in target_states.iter().enumerate() {
-        if let Some(id) = id {
-            if id.changes_in_node() {
-                if let Some(origin_index) = id.get_origin_index() {
+    target_with_states.for_each(|s| {
+        if let Some(target_state) = s.value().1 {
+            if target_state.changes_in_node() {
+                if let Some(origin_index) = target_state.get_origin_index() {
                     let origin_tag = origin.tags.at_pos(origin_index).value();
-                    let target_tag = target.tags.at_pos(target_index).value();
+                    let target_tag = s.value().0;
                     if origin_tag.text != target_tag.text {
-                        diff.push(DiffStep::text_change(id.get_id(), target_tag.text.clone()))
+                        diff.push(DiffStep::text_change(
+                            target_state.get_id(),
+                            target_tag.text.clone(),
+                        ))
                     }
                     let hash_diff = HashMapDiff::create(&origin_tag.args, &target_tag.args);
                     if !hash_diff.is_empty() {
-                        diff.push(DiffStep::change(id.get_id(), hash_diff))
+                        diff.push(DiffStep::change(target_state.get_id(), hash_diff))
                     }
                 }
             }
         }
-    }
+    });
 
     // Return the result
     (origin_with_ids, target_with_ids, diff)
