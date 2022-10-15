@@ -1,7 +1,7 @@
-use serde::{Serialize, Deserialize};
 use crate::diff::hashmap_diff::HashMapDiff;
-use crate::flat_tree::FlatTreeNeighbors;
-use crate::svg_data::{print_svg_element, SVGWithIDs};
+use crate::svg_data::{print_svg_element, SVGWithIDsSubtree};
+use flange_flat_tree::{Subtree, Tree};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct RemoveDiff {
@@ -59,81 +59,85 @@ pub struct ChangeTextDiff {
 #[serde(tag = "action")]
 pub enum DiffStep {
     // Remove a node
-    #[serde(rename="remove")]
+    #[serde(rename = "remove")]
     Remove(RemoveDiff),
     // Add
-    #[serde(rename="add")]
+    #[serde(rename = "add")]
     Add(AddDiff),
     // Change the properties of a tag
-    #[serde(rename="change")]
+    #[serde(rename = "change")]
     ChangeProperties(ChangePropertiesDiff),
-    #[serde(rename="change_text")]
+    #[serde(rename = "change_text")]
     ChangeText(ChangeTextDiff),
-    #[serde(rename="move")]
+    #[serde(rename = "move")]
     Move(MoveDiff),
 }
 
 impl DiffStep {
-    pub fn remove(position: FlatTreeNeighbors<String>) -> DiffStep {
+    pub fn remove(svg: &SVGWithIDsSubtree) -> DiffStep {
         DiffStep::Remove(RemoveDiff {
-            id: position.me.unwrap(),
-            parent_id: position.parent.unwrap(),
-            prev_child_id: position.prev_sibling,
-            next_child_id: position.next_sibling
+            id: svg.value().1.clone().unwrap(),
+            parent_id: svg.parent().and_then(|s| s.value().1.clone()).unwrap(),
+            prev_child_id: svg.prev_sibling().and_then(|s| s.value().1.clone()),
+            next_child_id: svg.next_sibling().and_then(|s| s.value().1.clone()),
         })
     }
 
-    pub fn add(svg: &SVGWithIDs, position: FlatTreeNeighbors<String>) -> DiffStep {
+    pub fn add(svg: &SVGWithIDsSubtree) -> DiffStep {
         DiffStep::Add(AddDiff {
             svg: print_svg_element(svg),
-            id: position.me.unwrap(),
-            parent_id: position.parent.unwrap(),
-            prev_child_id: position.prev_sibling,
-            next_child_id: position.next_sibling
+            id: svg.value().1.clone().unwrap(),
+            parent_id: svg.parent().and_then(|s| s.value().1.clone()).unwrap(),
+            prev_child_id: svg.prev_sibling().and_then(|s| s.value().1.clone()),
+            next_child_id: svg.next_sibling().and_then(|s| s.value().1.clone()),
         })
     }
 
     pub fn change(id: String, change: HashMapDiff<String>) -> DiffStep {
-        let adds = change.adds.iter().map(
-            |(prop, val)| Property {
+        let adds = change
+            .adds
+            .iter()
+            .map(|(prop, val)| Property {
                 prop: prop.clone(),
                 value: val.to_string(),
-            }
-        ).collect();
-        let removes = change.deletes.iter().map(
-            |(prop, val)| Property {
+            })
+            .collect();
+        let removes = change
+            .deletes
+            .iter()
+            .map(|(prop, val)| Property {
                 prop: prop.clone(),
                 value: val.to_string(),
-            }
-        ).collect();
-        let changes = change.changes.iter().map(
-            |(prop, (from, to))| ChangedProperty {
+            })
+            .collect();
+        let changes = change
+            .changes
+            .iter()
+            .map(|(prop, (from, to))| ChangedProperty {
                 prop: prop.clone(),
                 start: from.to_string(),
                 end: to.to_string(),
-            }
-        ).collect();
-        DiffStep::ChangeProperties(
-            ChangePropertiesDiff {
-                id,
-                adds,
-                removes,
-                changes
             })
+            .collect();
+        DiffStep::ChangeProperties(ChangePropertiesDiff {
+            id,
+            adds,
+            removes,
+            changes,
+        })
     }
 
     pub fn text_change(id: String, new_text: String) -> DiffStep {
-        DiffStep::ChangeText(ChangeTextDiff{id, new_text})
+        DiffStep::ChangeText(ChangeTextDiff { id, new_text })
     }
 
-    pub fn move_element(id: String, new_position: FlatTreeNeighbors<String>) -> DiffStep {
-        DiffStep::Move(
-            MoveDiff {
-                id,
-                new_parent_id: new_position.parent.unwrap(),
-                new_next_child_id: new_position.next_sibling,
-                new_prev_child_id: new_position.prev_sibling,
-            })
+    pub fn move_element(svg: &SVGWithIDsSubtree) -> DiffStep {
+        DiffStep::Move(MoveDiff {
+            id: svg.value().1.clone().unwrap(),
+            new_parent_id: svg.parent().and_then(|s| s.value().1.clone()).unwrap(),
+            new_prev_child_id: svg.prev_sibling().and_then(|s| s.value().1.clone()),
+            new_next_child_id: svg.next_sibling().and_then(|s| s.value().1.clone()),
+        })
     }
 
     pub fn is_add(&self) -> bool {

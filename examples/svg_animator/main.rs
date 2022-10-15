@@ -2,14 +2,11 @@ extern crate actix_web;
 extern crate env_logger;
 extern crate mime;
 
-
 use actix_files::NamedFile;
-use actix_web::{get, web, App, HttpServer, Result, HttpResponse};
-use std::path::Path;
+use actix_web::{get, web, App, HttpResponse, HttpServer, Result};
 use std::fs;
+use std::path::Path;
 use svg_diff::DiffStep;
-
-
 
 #[derive(Clone)]
 struct AppState {
@@ -19,14 +16,19 @@ struct AppState {
 
 // Function for finding the svg paths
 async fn find_svgs() -> Vec<String> {
-    for possible_path in vec!["./svgs", "./svg_animator/svgs", "./examples/svg_animator/svgs"] {
+    for possible_path in vec![
+        "./svgs",
+        "./svg_animator/svgs",
+        "./examples/svg_animator/svgs",
+    ] {
         let path = Path::new(possible_path);
         if path.exists() && path.is_dir() {
-            let mut res: Vec<String> = fs::read_dir(path).unwrap().map(
-                |f| f.unwrap().path().to_str().unwrap().to_string()
-            ).collect();
+            let mut res: Vec<String> = fs::read_dir(path)
+                .unwrap()
+                .map(|f| f.unwrap().path().to_str().unwrap().to_string())
+                .collect();
             res.sort();
-            return res
+            return res;
         }
     }
     return Vec::new();
@@ -35,7 +37,11 @@ async fn find_svgs() -> Vec<String> {
 #[get("/")]
 async fn root() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in vec!["./index.html", "./svg_animator/index.html", "./examples/svg_animator/index.html"] {
+    for possible_path in vec![
+        "./index.html",
+        "./svg_animator/index.html",
+        "./examples/svg_animator/index.html",
+    ] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }
@@ -68,9 +74,10 @@ async fn main() -> std::io::Result<()> {
     // Find and load the possible svg pathes
     let svg_paths = find_svgs().await;
     print!("Going to load: {:?}\n", svg_paths);
-    let svgs: Vec<String> = svg_paths.iter().map(
-        |p| fs::read_to_string(p).unwrap()
-    ).collect();
+    let svgs: Vec<String> = svg_paths
+        .iter()
+        .map(|p| fs::read_to_string(p).unwrap())
+        .collect();
 
     // Create the base and diff
     let (base_svgs, svg_diffs) = svg_diff::diff_from_strings(&svgs).unwrap();
@@ -89,7 +96,7 @@ async fn main() -> std::io::Result<()> {
             .service(base_svg)
             .service(diffs)
     })
-        .bind(("127.0.0.1", 8080))?
-        .run()
-        .await
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }

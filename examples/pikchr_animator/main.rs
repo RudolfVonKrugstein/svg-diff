@@ -5,31 +5,31 @@ extern crate pikchr;
 extern crate serde;
 extern crate serde_json;
 
-
 use actix_files::NamedFile;
-use actix_web::{get, post, web, App, HttpServer, Result, HttpResponse};
+use actix_web::{get, post, web, App, HttpResponse, HttpServer, Result};
 use std::path::Path;
-
 
 use std::sync::Mutex;
 
-
-
 use actix_web::middleware::Logger;
 use actix_web::web::Bytes;
-use log::{info};
-use pikchr::{PikchrFlags};
+use log::info;
+use pikchr::PikchrFlags;
 use serde::Serialize;
 use svg_diff::{diff_from_strings, DiffStep};
 
 struct AppState {
-    last_svg: Mutex<String>
+    last_svg: Mutex<String>,
 }
 
 #[get("/")]
 async fn root() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in vec!["./index.html", "./pikchr_animator/index.html", "./examples/pikchr_animator/index.html"] {
+    for possible_path in vec![
+        "./index.html",
+        "./pikchr_animator/index.html",
+        "./examples/pikchr_animator/index.html",
+    ] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }
@@ -40,7 +40,11 @@ async fn root() -> Result<NamedFile> {
 #[get("/js/animator.js")]
 async fn animator_js() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in vec!["./js/animator.js", "./pikchr_animator/js/animator.js", "./examples/pikchr_animator/js/animator.js"] {
+    for possible_path in vec![
+        "./js/animator.js",
+        "./pikchr_animator/js/animator.js",
+        "./examples/pikchr_animator/js/animator.js",
+    ] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }
@@ -76,14 +80,14 @@ async fn new_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpResponse 
     };
     if svg.contains("<!-- empty pikchr diagram -->") {
         info!("empty diagram");
-        return HttpResponse::Ok().json("{}")
+        return HttpResponse::Ok().json("{}");
     }
 
     // Old svg
     let mut old_svg = data.last_svg.lock().unwrap();
     if (*old_svg).len() == 0 {
         *old_svg = svg;
-        return HttpResponse::Ok().json("{}")
+        return HttpResponse::Ok().json("{}");
     }
     let start_svg = (*old_svg).clone();
     *old_svg = svg.clone();
@@ -96,11 +100,10 @@ async fn new_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpResponse 
         }
     };
 
-    HttpResponse::Ok()
-        .json(ResultObject {
-            svg: new_svgs[0].clone(),
-            diffs: diffs[0].clone(),
-        })
+    HttpResponse::Ok().json(ResultObject {
+        svg: new_svgs[0].clone(),
+        diffs: diffs[0].clone(),
+    })
 }
 
 #[actix_web::main] // or #[tokio::main]
@@ -130,7 +133,7 @@ async fn main() -> std::io::Result<()> {
             .service(animator_js)
             .service(new_diagram)
     })
-        .bind(("127.0.0.1", 8080))?
-        .run()
-        .await
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }

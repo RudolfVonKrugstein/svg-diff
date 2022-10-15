@@ -1,7 +1,7 @@
+use crate::errors::*;
+use crate::svg_data::attributes::SVGAttValue;
 use std::collections::HashMap;
 use svg::node::Value;
-use crate::svg_data::attributes::SVGAttValue;
-use crate::errors::*;
 
 #[derive(Debug, Clone)]
 pub struct Tag {
@@ -16,10 +16,6 @@ impl Tag {
         for (prop, value) in in_args.iter() {
             args.insert(prop.clone(), SVGAttValue::from_prop(prop, value)?);
         }
-        Ok(Tag {
-            name,
-            text,
-            args,
-        })
+        Ok(Tag { name, text, args })
     }
 }

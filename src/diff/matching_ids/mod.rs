@@ -11,6 +11,4 @@ mod matching_state;
 mod set_matching_ids;
 
 pub(crate) use self::generator::MatchingIdGenerator;
-pub(crate) use self::matching_state::MatchingState;
 pub(crate) use self::set_matching_ids::get_matching_ids;
-

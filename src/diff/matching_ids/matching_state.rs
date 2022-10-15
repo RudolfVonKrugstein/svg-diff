@@ -1,4 +1,3 @@
-
 use crate::diff::matching_ids::generator::MatchingIdGenerator;
 use crate::svg_data::TreeHash;
 
@@ -53,7 +52,14 @@ impl MatchingState {
     ///
     /// The `MatchingState` to be added to the Tags.
     /// Clone it to add it to both tags!
-    pub(crate) fn new(g: &mut MatchingIdGenerator, origin_index: usize, target_index: usize, hash: &TreeHash, o_hash: &TreeHash, default_id: Option<String>) -> MatchingState {
+    pub(crate) fn new(
+        g: &mut MatchingIdGenerator,
+        origin_index: usize,
+        target_index: usize,
+        hash: &TreeHash,
+        o_hash: &TreeHash,
+        default_id: Option<String>,
+    ) -> MatchingState {
         let no_changes = hash.eq_all(&o_hash);
         let subtree_changes = !no_changes;
         let internal_changes = !hash.eq_without_subtree(&o_hash);
@@ -80,12 +86,17 @@ impl MatchingState {
     ///
     /// The `MatchingState` to be added to the Tag.
     /// Don't clone it, it should be added to only one tag!
-    pub(crate) fn new_unmatched(index: usize, is_origin: bool, g: &mut MatchingIdGenerator, default_id: Option<String>) -> MatchingState {
+    pub(crate) fn new_unmatched(
+        index: usize,
+        is_origin: bool,
+        g: &mut MatchingIdGenerator,
+        default_id: Option<String>,
+    ) -> MatchingState {
         MatchingState {
             matching_id: g.next(default_id),
             no_changes: false,
-            origin_index: if is_origin {Some(index)} else {None},
-            target_index: if is_origin {None} else {Some(index)},
+            origin_index: if is_origin { Some(index) } else { None },
+            target_index: if is_origin { None } else { Some(index) },
             subtree_changes: false,
             internal_changes: false,
             no_match: true,

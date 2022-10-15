@@ -1,35 +1,38 @@
 use error_chain::bail;
+use flange_flat_tree::Tree;
 use regex::RegexBuilder;
-use svg::Parser;
 use svg::parser::Event;
+use svg::Parser;
 
-use crate::flat_tree::{FlatTree, FlatTreeBuilder, Navigator, NavigatorWithValues};
 use super::Tag;
+use super::TreeHash;
 use crate::errors::*;
-use crate::flat_tree;
+use flange_flat_tree::Builder;
+use flange_flat_tree::VecTree;
 
-#[derive(Debug)]
 pub struct SVG {
-    pub tags: FlatTree<Tag>
+    pub tags: VecTree<Tag>,
 }
 
-pub type SVGWithIDs<'a> = flat_tree::NavigatorWithValues<'a, Tag, Option<String>>;
+pub type SVGWithIDs<'a> = flange_flat_tree::FlangedTree<&'a VecTree<Tag>, Option<String>>;
+pub type SVGWithIDsSubtree<'a> =
+    <flange_flat_tree::FlangedTree<&'a VecTree<Tag>, Option<String>> as Tree<'a>>::SubtreeType;
+pub type SVGWithTreeHash<'a> = flange_flat_tree::FlangedTree<&'a VecTree<Tag>, TreeHash>;
+pub type SVGWithTreeHashSubtree<'a> =
+    <flange_flat_tree::FlangedTree<&'a VecTree<Tag>, TreeHash> as Tree<'a>>::SubtreeType;
 
 impl SVG {
-    pub fn with_ids<'a>(&'a self, ids: &'a Vec<Option<String>>) -> SVGWithIDs<'a> {
-        self.with_values(ids)
-    }
-
-    pub fn with_values<'a, A>(&'a self, values: &'a Vec<A>) -> NavigatorWithValues<'a, Tag,A> {
-        NavigatorWithValues::from_iterator(
-            Navigator::new(&self.tags, 0),
-            values,
-        )
+    pub fn with_ids<'a>(&'a self, ids: Vec<Option<String>>) -> SVGWithIDs<'a> {
+        self.tags.flange(ids)
     }
 
     pub fn parse_svg_string(input: &str) -> Result<SVG> {
         // Extract the svg part
-        let re = RegexBuilder::new(r"<svg.*</svg>").multi_line(true).dot_matches_new_line(true).build().unwrap();
+        let re = RegexBuilder::new(r"<svg.*</svg>")
+            .multi_line(true)
+            .dot_matches_new_line(true)
+            .build()
+            .unwrap();
         if let Some(svg_string) = re.find(input) {
             // Parse the svg part
             let mut p = svg::read(svg_string.as_str())?;
@@ -40,23 +43,29 @@ impl SVG {
     }
 
     pub fn parse_svg(events: &mut Parser) -> Result<SVG> {
-        let mut tags = FlatTreeBuilder::new();
+        let mut tags = Builder::new();
         // Go through svg event stream
-        let mut current_index :usize = 0;
+        let mut current_index: usize = 0;
         while let Some(event) = events.next() {
             match event {
                 Event::Error(e) => bail!(e),
                 Event::Tag(tag_name, tag_type, tag_args) => match tag_type {
                     svg::node::element::tag::Type::Start => {
-                        current_index = tags.start_element(
-                            Tag::new(tag_name.to_string(), "".to_string(), tag_args)?
-                        );
-                    },
+                        current_index = tags.start_element(Tag::new(
+                            tag_name.to_string(),
+                            "".to_string(),
+                            tag_args,
+                        )?);
+                    }
                     svg::node::element::tag::Type::End => {
                         tags.end_element();
-                    },
+                    }
                     svg::node::element::tag::Type::Empty => {
-                        tags.start_end_element(Tag::new(tag_name.to_string(), "".to_string(), tag_args)?);
+                        tags.start_end_element(Tag::new(
+                            tag_name.to_string(),
+                            "".to_string(),
+                            tag_args,
+                        )?);
                     }
                 },
                 Event::Text(t) => {
@@ -66,17 +75,15 @@ impl SVG {
                 Event::Declaration => panic!("1"),
                 Event::Instruction => panic!("!"),
             }
-        };
-        Ok(
-            SVG {
-                tags: tags.build()
-            }
-        )
+        }
+        Ok(SVG { tags: tags.build() })
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use flange_flat_tree::{Subtree, Tree};
+
     use super::*;
 
     #[test]
@@ -90,10 +97,10 @@ mod tests {
         let mut parser = svg::read(data).unwrap();
         let result = SVG::parse_svg(&mut parser).unwrap();
 
-        assert_eq!(result.tags.children(0).len(), 1);
-        assert_eq!(result.tags.children(0)[0].name, "circle");
+        assert_eq!(result.tags.root().children().len(), 1);
+        assert_eq!(result.tags.root().children()[0].value().name, "circle");
         assert_eq!(
-            result.tags.get(0).unwrap().text,
+            result.tags.root().value().text,
             "Sorry, your browser does not support inline SVG."
         );
     }

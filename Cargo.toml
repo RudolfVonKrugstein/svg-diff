@@ -13,12 +13,7 @@ homepage = "https://github.com/RudolfVonKrugstein/svg-diff"
 documentation = "https://github.com/RudolfVonKrugstein/svg-diff"
 readme = "README.md"
 license = "MIT"
-exclude = [
-    ".idea/",
-    "node_modules",
-    "yarn.lock",
-    ".github"
-]
+exclude = [".idea/", "node_modules", "yarn.lock", ".github"]
 
 [dependencies]
 svg = "0.10"
@@ -33,9 +28,10 @@ log = "0"
 env_logger = "0"
 mime = "0"
 random-string = "1"
+flange-flat-tree = { path = "../flange-flat-tree-rs" }
 
 [build-dependencies]
-napi-build = "1"
+napi-build = "2"
 
 [dev-dependencies]
 pikchr = "0"

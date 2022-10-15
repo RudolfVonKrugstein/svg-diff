@@ -1,7 +1,6 @@
-
+use crate::svg_data::attributes::SVGAttValue;
 use std::collections::HashMap;
 use std::hash::Hash;
-use crate::svg_data::attributes::SVGAttValue;
 
 #[derive(Debug)]
 pub struct HashMapDiff<A>

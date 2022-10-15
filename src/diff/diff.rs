@@ -1,46 +1,44 @@
+use flange_flat_tree::{Subtree, Tree};
 
 use super::step::DiffStep;
-use crate::diff::matching_ids::{MatchingIdGenerator, get_matching_ids};
-use crate::{print_svg, SVG};
 use crate::diff::hashmap_diff::HashMapDiff;
-use crate::flat_tree::{FlatTreeNeighbors};
+use crate::diff::matching_ids::{get_matching_ids, MatchingIdGenerator};
 use crate::errors::*;
+use crate::svg_data::{SVGWithIDs, SVGWithIDsSubtree};
+use crate::{print_svg, SVG};
 
-pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (Vec<Option<String>>, Vec<Option<String>>, Vec<DiffStep>) {
+pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (SVGWithIDs, SVGWithIDs, Vec<DiffStep>) {
     // Track the result
     let mut diff = Vec::new();
 
     // Match using tagging ids
     let mut g = MatchingIdGenerator::new();
     let (origin_states, target_states) = get_matching_ids(origin, target, &mut g);
-    let origin_ids: Vec<Option<String>> = origin_states.iter().map(|s| s.as_ref().map(|m| m.get_id())).collect();
-    let target_ids: Vec<Option<String>> = target_states.iter().map(|s| s.as_ref().map(|m| m.get_id())).collect();
+    let origin_ids: Vec<Option<String>> = origin_states
+        .iter()
+        .map(|s| s.as_ref().map(|m| m.get_id()))
+        .collect();
+    let target_ids: Vec<Option<String>> = target_states
+        .iter()
+        .map(|s| s.as_ref().map(|m| m.get_id()))
+        .collect();
 
     // Build the svg with ids
     // let origin_with_ids = origin.with_ids(&origin_ids);
-    let target_with_ids = target.with_ids(&target_ids);
-
-    // Build the position info with the matching information
-    let origin_pos_info: Vec<FlatTreeNeighbors<&String>> =
-        origin.tags.all_neighbors().iter().map(
-        |index| index.map_and_then_with_values(&origin_ids)
-    ).collect();
-    let target_pos_info: Vec<FlatTreeNeighbors<&String>> =
-        target.tags.all_neighbors().iter().map(
-            |index| index.map_and_then_with_values(&target_ids)
-        ).collect();
+    let target_with_ids = target.with_ids(target_ids);
+    let origin_with_ids = origin.with_ids(origin_ids);
 
     // 1. Add unmatched tags in the target
     for (index, state) in target_states.iter().enumerate() {
         if state.as_ref().map(|s| s.is_unmatched()).unwrap_or(false) {
-            diff.push(DiffStep::add(&target_with_ids.at_pos(index), target_pos_info[index].cloned()))
+            diff.push(DiffStep::add(&target_with_ids.at_pos(index)))
         }
     }
 
     // 2. remove unmatched tags
     for (index, state) in origin_states.iter().enumerate() {
         if state.as_ref().map(|s| s.is_unmatched()).unwrap_or(false) {
-            diff.push(DiffStep::remove(origin_pos_info[index].cloned()))
+            diff.push(DiffStep::remove(&origin_with_ids.at_pos(index)))
         }
     }
 
@@ -50,39 +48,54 @@ pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (Vec<Option<String>>, Vec<O
             if id.changes_in_subtree() {
                 if let Some(origin_index) = id.get_origin_index() {
                     // Get the ids of both origin and target, that have not been removed or added
-                    let mut current_child_indexes: Vec<usize> = origin.tags.get_index().children(origin_index).iter()
-                        .filter(
-                            |&i| !origin_states[*i].as_ref().unwrap().is_unmatched()
-                    ).map(
-                        |i| *i
-                    ).collect();
-                    let target_child_indexes: Vec<usize> = target.tags.get_index().children(origin_index).iter()
-                        .filter(
-                            |&i| !target_states[*i].as_ref().unwrap().is_unmatched()
-                        ).map(
-                        |i| *i
-                    ).collect();
-                    assert!(current_child_indexes.len() == target_child_indexes.len());
+                    let mut current_childs: Vec<SVGWithIDsSubtree> = Vec::new();
+                    for child in origin_with_ids.at_pos(origin_index).children() {
+                        if !origin_states[child.get_pos()]
+                            .as_ref()
+                            .unwrap()
+                            .is_unmatched()
+                        {
+                            current_childs.push(child);
+                        }
+                    }
+                    let mut target_childs: Vec<SVGWithIDsSubtree> = Vec::new();
+                    for child in target_with_ids.at_pos(origin_index).children() {
+                        if !target_states[child.get_pos()]
+                            .as_ref()
+                            .unwrap()
+                            .is_unmatched()
+                        {
+                            target_childs.push(child);
+                        }
+                    }
+                    assert!(current_childs.len() == target_childs.len());
                     // Find those, that don't match!
                     let mut unmatched_indices = Vec::new();
-                    for i in 0..target_child_indexes.len() {
-                        let current_child_index = current_child_indexes[i];
-                        let target_child_index = target_child_indexes[i];
-                        if origin_ids[current_child_index].as_ref().unwrap() != target_ids[target_child_index].as_ref().unwrap() {
-                            unmatched_indices.push(target_child_index);
+                    for (index, target_child) in target_childs.into_iter().enumerate() {
+                        if current_childs[index].value().1.as_ref().unwrap()
+                            != target_child.value().1.as_ref().unwrap()
+                        {
                             // modified the origin child ids to match
                             let swap_index = {
-                                current_child_indexes.iter().enumerate().filter(
-                                    |(_index, origin_index)| origin_ids[**origin_index].as_ref().unwrap() == target_ids[target_child_index].as_ref().unwrap()
-                                ).next().unwrap().0
+                                current_childs
+                                    .iter()
+                                    .enumerate()
+                                    .find(|(_index, child)| {
+                                        child.value().1.as_ref().unwrap()
+                                            == target_child.value().1.as_ref().unwrap()
+                                    })
+                                    .unwrap()
+                                    .0
                             };
                             // Swap the indices
-                            current_child_indexes.swap(swap_index, i);
+                            current_childs.swap(swap_index, index);
+                            // Remember the target child
+                            unmatched_indices.push(target_child);
                         }
                     }
                     // Push those unmatched indices
-                    for target_index in unmatched_indices {
-                        diff.push(DiffStep::move_element(target_ids[target_index].clone().unwrap(), target_pos_info[target_index].cloned()));
+                    for target in unmatched_indices {
+                        diff.push(DiffStep::move_element(&target));
                     }
                 }
             }
@@ -94,8 +107,8 @@ pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (Vec<Option<String>>, Vec<O
         if let Some(id) = id {
             if id.changes_in_node() {
                 if let Some(origin_index) = id.get_origin_index() {
-                    let origin_tag = origin.tags.get(origin_index).unwrap();
-                    let target_tag = target.tags.get(target_index).unwrap();
+                    let origin_tag = origin.tags.at_pos(origin_index).value();
+                    let target_tag = target.tags.at_pos(target_index).value();
                     if origin_tag.text != target_tag.text {
                         diff.push(DiffStep::text_change(id.get_id(), target_tag.text.clone()))
                     }
@@ -108,21 +121,17 @@ pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (Vec<Option<String>>, Vec<O
         }
     }
 
-
     // Return the result
-    (origin_ids, target_ids, diff)
+    (origin_with_ids, target_with_ids, diff)
 }
 
-pub fn diffs<'a>(tags: &'a Vec<SVG>) -> (Vec<Vec<Option<String>>>, Vec<Vec<DiffStep>>) {
+pub fn diffs<'a>(tags: &'a Vec<SVG>) -> (Vec<SVGWithIDs>, Vec<Vec<DiffStep>>) {
     let mut svgs = Vec::new();
     let mut diffs = Vec::new();
 
     for index in 0..tags.len() - 1 {
         // We cannot borrow mutable twice, so we do a trick
-        let d: (Vec<Option<String>>, Vec<Option<String>>, Vec<DiffStep>) = diff(
-            &tags[index],
-            &tags[index+1],
-        );
+        let d: (SVGWithIDs, SVGWithIDs, Vec<DiffStep>) = diff(&tags[index], &tags[index + 1]);
         svgs.push(d.0);
         diffs.push(d.2);
     }
@@ -130,35 +139,27 @@ pub fn diffs<'a>(tags: &'a Vec<SVG>) -> (Vec<Vec<Option<String>>>, Vec<Vec<DiffS
     (svgs, diffs)
 }
 
-pub fn diff_from_strings(
-    svg_strings: &Vec<String>,
-) -> Result<(Vec<String>, Vec<Vec<DiffStep>>)> {
+pub fn diff_from_strings(svg_strings: &Vec<String>) -> Result<(Vec<String>, Vec<Vec<DiffStep>>)> {
     // Convert the input
     let svgs: crate::errors::Result<Vec<SVG>> = svg_strings
         .iter()
-        .map(|s| {
-            match SVG::parse_svg_string(s.as_str()) {
-                Ok(v) => Ok(v),
-                Err(e) => Err(e)
-            }
+        .map(|s| match SVG::parse_svg_string(s.as_str()) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e),
         })
         .collect();
     let svgs = svgs?;
 
     // Create the diffs!
-    let (svg_ids, diff) = diffs(&svgs);
+    let (svg_with_ids, diff) = diffs(&svgs);
 
     // Create result svgs
     let mut res_svgs = Vec::new();
-    for i in 0..svg_ids.len() {
-        let svg_with_id = svgs[i].with_ids(&svg_ids[i]);
-        res_svgs.push(print_svg(&svg_with_id));
+    for svg in svg_with_ids.into_iter() {
+        res_svgs.push(print_svg(&svg));
     }
 
-    Ok((
-        res_svgs,
-        diff,
-    ))
+    Ok((res_svgs, diff))
 }
 
 #[cfg(test)]
@@ -269,13 +270,13 @@ mod test {
           <text color="#00FF00">Hello</text>
         </svg>
         "###
-            .to_string();
+        .to_string();
         let target = r###"
         <svg>
           <text>Good Bye</text>
         </svg>
         "###
-            .to_string();
+        .to_string();
 
         // Act
         let (_svgs, diffs) = diff_from_strings(&vec![origin, target]).unwrap();
@@ -295,14 +296,14 @@ mod test {
           <text color="#00FF00">Hello</text>
         </svg>
         "###
-            .to_string();
+        .to_string();
         let target = r###"
         <svg>
           <text color="#00FF00">Hello</text>
           <g></g>
         </svg>
         "###
-            .to_string();
+        .to_string();
 
         // Act
         let (_svgs, diffs) = diff_from_strings(&vec![origin, target]).unwrap();

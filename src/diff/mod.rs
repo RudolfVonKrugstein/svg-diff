@@ -7,6 +7,3 @@ pub use self::diff::diff;
 pub use self::diff::diff_from_strings;
 pub use self::diff::diffs;
 pub use self::step::DiffStep;
-
-
-
