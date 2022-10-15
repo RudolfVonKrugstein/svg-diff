@@ -37,13 +37,13 @@ async fn root() -> Result<NamedFile> {
     return Ok(NamedFile::open("./index.html")?);
 }
 
-#[get("/js/animator.js")]
+#[get("/js_assets/animator.js")]
 async fn animator_js() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
     for possible_path in vec![
-        "./js/animator.js",
-        "./pikchr_animator/js/animator.js",
-        "./examples/pikchr_animator/js/animator.js",
+        "./examples/pikchr_animator/js_assets/animator.js",
+        "../js_assets/animator.js",
+        "./examples/js_assets/animator.js",
     ] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);

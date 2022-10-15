@@ -67,6 +67,21 @@ async fn diffs(data: web::Data<AppState>) -> HttpResponse {
         .json(&data.diffs)
 }
 
+#[get("/js_assets/animator.js")]
+async fn animator_js() -> Result<NamedFile> {
+    // Serve one of the possible pathes ...
+    for possible_path in vec![
+        "./examples/pikchr_animator/js_assets/animator.js",
+        "../js_assets/animator.js",
+        "./examples/js_assets/animator.js",
+    ] {
+        if Path::new(possible_path).exists() {
+            return Ok(NamedFile::open(possible_path)?);
+        }
+    }
+    return Ok(NamedFile::open("./js/animator.js")?);
+}
+
 #[actix_web::main] // or #[tokio::main]
 async fn main() -> std::io::Result<()> {
     // Set the logger
@@ -95,6 +110,7 @@ async fn main() -> std::io::Result<()> {
             .service(root)
             .service(base_svg)
             .service(diffs)
+            .service(animator_js)
     })
     .bind(("127.0.0.1", 8080))?
     .run()

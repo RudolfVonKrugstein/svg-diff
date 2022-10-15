@@ -58,13 +58,11 @@ function apply_animation(diffs) {
                 }
 
                 let anim = el.transition().duration(1000);
-                for (change of diff.changes.concat(diff.adds)) {
+                for (change of diff.changes) {
+                    anim.attr(change.prop, change.end);
+                }
+                for (change of diff.adds) {
                     anim.attr(change.prop, change.value);
-                    // if (change.prop === "transform") {
-                    //     element.animate(2000, 0, 'now').transform(change.value);
-                    // } else {
-                    //     element.animate(2000, 0, 'now').attr(change.prop, change.value);
-                    // }
                 }
                 break;
             case "change_text":
