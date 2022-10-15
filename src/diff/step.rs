@@ -1,6 +1,6 @@
 use crate::diff::hashmap_diff::HashMapDiff;
-use crate::svg_data::{print_svg_element, SVGWithIDsSubtree};
-use flange_flat_tree::{Subtree, Tree};
+use crate::svg_data::{print_svg_element, Tag};
+use flange_flat_tree::Subtree;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -74,7 +74,10 @@ pub enum DiffStep {
 }
 
 impl DiffStep {
-    pub fn remove(svg: &SVGWithIDsSubtree) -> DiffStep {
+    pub fn remove<'a, ST>(svg: &'a ST) -> DiffStep
+    where
+        ST: Subtree<Node = (&'a Tag, &'a Option<String>)>,
+    {
         DiffStep::Remove(RemoveDiff {
             id: svg.value().1.clone().unwrap(),
             parent_id: svg.parent().and_then(|s| s.value().1.clone()).unwrap(),
@@ -83,7 +86,10 @@ impl DiffStep {
         })
     }
 
-    pub fn add(svg: &SVGWithIDsSubtree) -> DiffStep {
+    pub fn add<'a, SVG>(svg: &'a SVG) -> DiffStep
+    where
+        SVG: Subtree<Node = (&'a Tag, &'a Option<String>)>,
+    {
         DiffStep::Add(AddDiff {
             svg: print_svg_element(svg),
             id: svg.value().1.clone().unwrap(),
@@ -131,7 +137,10 @@ impl DiffStep {
         DiffStep::ChangeText(ChangeTextDiff { id, new_text })
     }
 
-    pub fn move_element(svg: &SVGWithIDsSubtree) -> DiffStep {
+    pub fn move_element<'a, ST>(svg: &'a ST) -> DiffStep
+    where
+        ST: Subtree<Node = (&'a Tag, &'a Option<String>)>,
+    {
         DiffStep::Move(MoveDiff {
             id: svg.value().1.clone().unwrap(),
             new_parent_id: svg.parent().and_then(|s| s.value().1.clone()).unwrap(),
@@ -141,37 +150,22 @@ impl DiffStep {
     }
 
     pub fn is_add(&self) -> bool {
-        match *self {
-            DiffStep::Add(_) => true,
-            _ => false,
-        }
+        matches!(*self, DiffStep::Add(_))
     }
 
     pub fn is_remove(&self) -> bool {
-        match *self {
-            DiffStep::Remove(_) => true,
-            _ => false,
-        }
+        matches!(*self, DiffStep::Remove(_))
     }
 
     pub fn is_change(&self) -> bool {
-        match *self {
-            DiffStep::ChangeProperties(_) => true,
-            _ => false,
-        }
+        matches!(*self, DiffStep::ChangeProperties(_))
     }
 
     pub fn is_text_change(&self) -> bool {
-        match *self {
-            DiffStep::ChangeText(_) => true,
-            _ => false,
-        }
+        matches!(*self, DiffStep::ChangeText(_))
     }
 
     pub fn is_move(&self) -> bool {
-        match *self {
-            DiffStep::Move(_) => true,
-            _ => false,
-        }
+        matches!(*self, DiffStep::Move(_))
     }
 }

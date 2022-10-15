@@ -25,31 +25,27 @@ struct AppState {
 #[get("/")]
 async fn root() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in vec![
-        "./index.html",
+    for possible_path in &["./index.html",
         "./pikchr_animator/index.html",
-        "./examples/pikchr_animator/index.html",
-    ] {
+        "./examples/pikchr_animator/index.html"] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }
     }
-    return Ok(NamedFile::open("./index.html")?);
+    Ok(NamedFile::open("./index.html")?)
 }
 
 #[get("/js_assets/animator.js")]
 async fn animator_js() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in vec![
-        "./examples/pikchr_animator/js_assets/animator.js",
+    for possible_path in &["./examples/pikchr_animator/js_assets/animator.js",
         "../js_assets/animator.js",
-        "./examples/js_assets/animator.js",
-    ] {
+        "./examples/js_assets/animator.js"] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }
     }
-    return Ok(NamedFile::open("./js/animator.js")?);
+    Ok(NamedFile::open("./js/animator.js")?)
 }
 
 #[derive(Serialize)]
@@ -76,7 +72,7 @@ async fn new_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpResponse 
     let res = pikchr::Pikchr::render(input.as_str(), None, PikchrFlags::default());
     let svg = match res {
         Ok(p) => String::from_utf8(p.bytes().collect()).unwrap(),
-        Err(e) => return HttpResponse::BadRequest().body(e.to_string()),
+        Err(e) => return HttpResponse::BadRequest().body(e),
     };
     if svg.contains("<!-- empty pikchr diagram -->") {
         info!("empty diagram");
@@ -85,7 +81,7 @@ async fn new_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpResponse 
 
     // Old svg
     let mut old_svg = data.last_svg.lock().unwrap();
-    if (*old_svg).len() == 0 {
+    if (*old_svg).is_empty() {
         *old_svg = svg;
         return HttpResponse::Ok().json("{}");
     }

@@ -35,7 +35,7 @@ pub(crate) struct MatchingState {
 impl MatchingState {
     /// Returns the ID as it should be stored in the "id" attribute of the element.
     pub fn get_id(&self) -> String {
-        format!("{}", self.matching_id)
+        self.matching_id.to_string()
     }
 
     /// Create a new matching State.
@@ -60,9 +60,9 @@ impl MatchingState {
         o_hash: &TreeHash,
         default_id: Option<String>,
     ) -> MatchingState {
-        let no_changes = hash.eq_all(&o_hash);
+        let no_changes = hash.eq_all(o_hash);
         let subtree_changes = !no_changes;
-        let internal_changes = !hash.eq_without_subtree(&o_hash);
+        let internal_changes = !hash.eq_without_subtree(o_hash);
         MatchingState {
             matching_id: g.next(default_id),
             origin_index: Some(origin_index),

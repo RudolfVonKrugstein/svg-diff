@@ -4,7 +4,7 @@ use super::step::DiffStep;
 use crate::diff::hashmap_diff::HashMapDiff;
 use crate::diff::matching_ids::{get_matching_ids, MatchingIdGenerator};
 use crate::errors::*;
-use crate::svg_data::{SVGWithIDs, SVGWithIDsSubtree};
+use crate::svg_data::SVGWithIDs;
 use crate::{print_svg, SVG};
 
 pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (SVGWithIDs, SVGWithIDs, Vec<DiffStep>) {
@@ -48,7 +48,7 @@ pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (SVGWithIDs, SVGWithIDs, Ve
             if id.changes_in_subtree() {
                 if let Some(origin_index) = id.get_origin_index() {
                     // Get the ids of both origin and target, that have not been removed or added
-                    let mut current_childs: Vec<SVGWithIDsSubtree> = Vec::new();
+                    let mut current_childs = Vec::new();
                     for child in origin_with_ids.at_pos(origin_index).children() {
                         if !origin_states[child.get_pos()]
                             .as_ref()
@@ -58,7 +58,7 @@ pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (SVGWithIDs, SVGWithIDs, Ve
                             current_childs.push(child);
                         }
                     }
-                    let mut target_childs: Vec<SVGWithIDsSubtree> = Vec::new();
+                    let mut target_childs = Vec::new();
                     for child in target_with_ids.at_pos(origin_index).children() {
                         if !target_states[child.get_pos()]
                             .as_ref()
@@ -125,7 +125,7 @@ pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (SVGWithIDs, SVGWithIDs, Ve
     (origin_with_ids, target_with_ids, diff)
 }
 
-pub fn diffs<'a>(tags: &'a Vec<SVG>) -> (Vec<SVGWithIDs>, Vec<Vec<DiffStep>>) {
+pub fn diffs(tags: &Vec<SVG>) -> (Vec<SVGWithIDs>, Vec<Vec<DiffStep>>) {
     let mut svgs = Vec::new();
     let mut diffs = Vec::new();
 
@@ -139,7 +139,7 @@ pub fn diffs<'a>(tags: &'a Vec<SVG>) -> (Vec<SVGWithIDs>, Vec<Vec<DiffStep>>) {
     (svgs, diffs)
 }
 
-pub fn diff_from_strings(svg_strings: &Vec<String>) -> Result<(Vec<String>, Vec<Vec<DiffStep>>)> {
+pub fn diff_from_strings(svg_strings: &[String]) -> Result<(Vec<String>, Vec<Vec<DiffStep>>)> {
     // Convert the input
     let svgs: crate::errors::Result<Vec<SVG>> = svg_strings
         .iter()
@@ -181,7 +181,7 @@ mod test {
         .to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&vec![origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 1);
@@ -207,7 +207,7 @@ mod test {
         "#.to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&vec![origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 1);
@@ -231,7 +231,7 @@ mod test {
         .to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&vec![origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 1);
@@ -255,7 +255,7 @@ mod test {
         .to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&vec![origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 1);
@@ -279,7 +279,7 @@ mod test {
         .to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&vec![origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 2);
@@ -306,7 +306,7 @@ mod test {
         .to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&vec![origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 1);

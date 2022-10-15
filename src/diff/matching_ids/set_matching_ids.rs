@@ -1,6 +1,6 @@
 use crate::diff::matching_ids::{generator::MatchingIdGenerator, matching_state::MatchingState};
 use crate::svg_data::{SVGWithTreeHashSubtree, TreeHash};
-use crate::{SVG};
+use crate::SVG;
 use flange_flat_tree::{Subtree, Tree};
 use log::debug;
 

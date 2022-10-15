@@ -16,11 +16,9 @@ struct AppState {
 
 // Function for finding the svg paths
 async fn find_svgs() -> Vec<String> {
-    for possible_path in vec![
-        "./svgs",
+    for possible_path in &["./svgs",
         "./svg_animator/svgs",
-        "./examples/svg_animator/svgs",
-    ] {
+        "./examples/svg_animator/svgs"] {
         let path = Path::new(possible_path);
         if path.exists() && path.is_dir() {
             let mut res: Vec<String> = fs::read_dir(path)
@@ -31,22 +29,20 @@ async fn find_svgs() -> Vec<String> {
             return res;
         }
     }
-    return Vec::new();
+    Vec::new()
 }
 
 #[get("/")]
 async fn root() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in vec![
-        "./index.html",
+    for possible_path in &["./index.html",
         "./svg_animator/index.html",
-        "./examples/svg_animator/index.html",
-    ] {
+        "./examples/svg_animator/index.html"] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }
     }
-    return Ok(NamedFile::open("./index.html")?);
+    Ok(NamedFile::open("./index.html")?)
 }
 
 #[get("/base{index}.svg")]
@@ -70,16 +66,14 @@ async fn diffs(data: web::Data<AppState>) -> HttpResponse {
 #[get("/js_assets/animator.js")]
 async fn animator_js() -> Result<NamedFile> {
     // Serve one of the possible pathes ...
-    for possible_path in vec![
-        "./examples/pikchr_animator/js_assets/animator.js",
+    for possible_path in &["./examples/pikchr_animator/js_assets/animator.js",
         "../js_assets/animator.js",
-        "./examples/js_assets/animator.js",
-    ] {
+        "./examples/js_assets/animator.js"] {
         if Path::new(possible_path).exists() {
             return Ok(NamedFile::open(possible_path)?);
         }
     }
-    return Ok(NamedFile::open("./js/animator.js")?);
+    Ok(NamedFile::open("./js/animator.js")?)
 }
 
 #[actix_web::main] // or #[tokio::main]
@@ -88,7 +82,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init();
     // Find and load the possible svg pathes
     let svg_paths = find_svgs().await;
-    print!("Going to load: {:?}\n", svg_paths);
+    println!("Going to load: {:?}", svg_paths);
     let svgs: Vec<String> = svg_paths
         .iter()
         .map(|p| fs::read_to_string(p).unwrap())
@@ -99,7 +93,7 @@ async fn main() -> std::io::Result<()> {
 
     // Create state
     let state = AppState {
-        base_svgs: base_svgs,
+        base_svgs,
         diffs: svg_diffs,
     };
 

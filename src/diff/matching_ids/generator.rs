@@ -41,7 +41,7 @@ impl MatchingIdGenerator {
             pre_id
         } else {
             let res = format!("{}-{}", self.prefix, self.next_index);
-            self.next_index = self.next_index + 1;
+            self.next_index += 1;
             res
         }
     }

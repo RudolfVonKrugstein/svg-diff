@@ -5,7 +5,6 @@ mod tag;
 mod treehash;
 
 pub use self::svg::SVGWithIDs;
-pub use self::svg::SVGWithIDsSubtree;
 pub use self::svg::SVGWithTreeHash;
 pub use self::svg::SVGWithTreeHashSubtree;
 pub use self::svg::SVG;

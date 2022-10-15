@@ -21,7 +21,7 @@ fn build_element<'a, ST: Subtree<Node = (&'a Tag, &'a Option<String>)>>(
     for child in &svg.children() {
         el.append(build_element(child));
     }
-    if tag.text.len() > 0 {
+    if !tag.text.is_empty() {
         el.append(Text::new(&tag.text))
     }
     el
@@ -39,7 +39,7 @@ fn build_doc(svg: &SVGWithIDs) -> svg::Document {
     for child in &svg.root().children() {
         doc.append(build_element(child));
     }
-    if root_tag.text.len() > 0 {
+    if !root_tag.text.is_empty() {
         doc.append(Text::new(&root_tag.text))
     }
     doc

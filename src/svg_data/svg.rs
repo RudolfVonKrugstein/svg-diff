@@ -15,14 +15,12 @@ pub struct SVG {
 }
 
 pub type SVGWithIDs<'a> = flange_flat_tree::FlangedTree<&'a VecTree<Tag>, Option<String>>;
-pub type SVGWithIDsSubtree<'a> =
-    <flange_flat_tree::FlangedTree<&'a VecTree<Tag>, Option<String>> as Tree<'a>>::SubtreeType;
 pub type SVGWithTreeHash<'a> = flange_flat_tree::FlangedTree<&'a VecTree<Tag>, TreeHash>;
 pub type SVGWithTreeHashSubtree<'a> =
     <flange_flat_tree::FlangedTree<&'a VecTree<Tag>, TreeHash> as Tree<'a>>::SubtreeType;
 
 impl SVG {
-    pub fn with_ids<'a>(&'a self, ids: Vec<Option<String>>) -> SVGWithIDs<'a> {
+    pub fn with_ids(&self, ids: Vec<Option<String>>) -> SVGWithIDs {
         self.tags.flange(ids)
     }
 
@@ -46,7 +44,7 @@ impl SVG {
         let mut tags = Builder::new();
         // Go through svg event stream
         let mut current_index: usize = 0;
-        while let Some(event) = events.next() {
+        for event in events.by_ref() {
             match event {
                 Event::Error(e) => bail!(e),
                 Event::Tag(tag_name, tag_type, tag_args) => match tag_type {
