@@ -67,7 +67,7 @@ function apply_animation(diffs) {
                 break;
             case "change_text":
                 let text_element = document.getElementById(diff.id);
-                element.textContent = diff.new_text
+                text_element.textContent = diff.new_text
                 break;
         }
 
