@@ -1,5 +1,5 @@
 [lib]
-# crate-type = ["cdylib"]
+crate-type = ["cdylib", "lib"]
 
 [package]
 name = "svg-diff"
@@ -20,8 +20,8 @@ svg = "0.10"
 svgtypes = "0"
 regex = "1"
 error-chain = "0.12"
-napi = "2"
-napi-derive = "2"
+napi = { version = "2", optional = true }
+napi-derive = { version = "2", optional = true }
 serde_json = "1"
 serde = { version = "1", features = ["derive"] }
 log = "0"
@@ -31,7 +31,7 @@ random-string = "1"
 flange-flat-tree = "0.2"
 
 [build-dependencies]
-napi-build = "2"
+napi-build = { version = "2", optional = true }
 
 [dev-dependencies]
 git-graph-to-svg = { git = "https://github.com/RudolfVonKrugstein/git-graph-to-svg.git" }
@@ -40,4 +40,4 @@ pikchr = "0"
 actix-web = "4"
 actix-files = "0"
 [features]
-node = []
+node = ["dep:napi", "dep:napi-derive", "dep:napi-build"]
