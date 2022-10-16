@@ -1,3 +1,6 @@
+use std::cmp::{max, max_by, min, min_by};
+use std::cmp::Ordering::Equal;
+use std::str::FromStr;
 use flange_flat_tree::{Subtree, Tree};
 
 use super::step::DiffStep;
@@ -140,9 +143,30 @@ pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (SVGWithIDs, SVGWithIDs, Ve
     (origin_with_ids, target_with_ids, diff)
 }
 
-pub fn diffs(tags: &Vec<SVG>) -> (Vec<SVGWithIDs>, Vec<Vec<DiffStep>>) {
+pub fn diffs(tags: &Vec<SVG>, min_view_box: Option<svgtypes::ViewBox>) -> (Vec<SVGWithIDs>, Vec<Vec<DiffStep>>, svgtypes::ViewBox) {
     let mut svgs = Vec::new();
     let mut diffs = Vec::new();
+
+    // Find the biggest all containing viewbox
+    let mut all_viewbox = min_view_box.unwrap_or(svgtypes::ViewBox::new(0.0,0.0,0.0,0.0));
+    for svg in tags {
+        if svg.tags.root().value().args.contains_key("viewBox") {
+            let svg_viewbox = svgtypes::ViewBox::from_str(svg.tags.root().value().args["viewBox"].to_string().as_str()).unwrap_or(all_viewbox.clone());
+            let x_start = min_by(all_viewbox.x, svg_viewbox.x,
+                                 |a,b| a.partial_cmp(b).unwrap_or(Equal)
+            );
+            let x_end = max_by(all_viewbox.x + all_viewbox.w, svg_viewbox.x + svg_viewbox.w,
+                               |a,b| a.partial_cmp(b).unwrap_or(Equal)
+            );
+            let y_start = min_by(all_viewbox.y, svg_viewbox.y,
+                                 |a,b| a.partial_cmp(b).unwrap_or(Equal)
+            );
+            let y_end = max_by(all_viewbox.y + all_viewbox.h, svg_viewbox.y + svg_viewbox.h,
+                               |a,b| a.partial_cmp(b).unwrap_or(Equal)
+            );
+            all_viewbox = svgtypes::ViewBox::new(x_start, y_start, x_end-x_start,y_end-y_start);
+        }
+    }
 
     for index in 0..tags.len() - 1 {
         // We cannot borrow mutable twice, so we do a trick
@@ -151,7 +175,7 @@ pub fn diffs(tags: &Vec<SVG>) -> (Vec<SVGWithIDs>, Vec<Vec<DiffStep>>) {
         diffs.push(d.2);
     }
 
-    (svgs, diffs)
+    (svgs, diffs, all_viewbox)
 }
 
 pub fn diff_from_strings(svg_strings: &[String]) -> Result<(Vec<String>, Vec<Vec<DiffStep>>)> {
@@ -166,12 +190,12 @@ pub fn diff_from_strings(svg_strings: &[String]) -> Result<(Vec<String>, Vec<Vec
     let svgs = svgs?;
 
     // Create the diffs!
-    let (svg_with_ids, diff) = diffs(&svgs);
+    let (svg_with_ids, diff, viewBox) = diffs(&svgs, None);
 
     // Create result svgs
     let mut res_svgs = Vec::new();
     for svg in svg_with_ids.into_iter() {
-        res_svgs.push(print_svg(&svg));
+        res_svgs.push(print_svg(&svg, Some(&viewBox)));
     }
 
     Ok((res_svgs, diff))
