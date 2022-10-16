@@ -54,12 +54,22 @@ impl TreeHash {
             c.all.hash(&mut all_hasher);
         }
 
-        // Sort the children by "all"
+        // Sort the children by "with_reorder"
         let mut all_children = children.clone();
-        all_children.sort_by(|&a, &b| a.all.cmp(&b.all));
-        for c in all_children {
+        all_children.sort_by(|&a, &b| a.with_reorder.cmp(&b.with_reorder));
+        for c in all_children.iter() {
             c.with_reorder.hash(&mut with_reorder_hasher);
+        }
+
+        // And by without_attr
+        all_children.sort_by(|&a, &b| a.without_attr.cmp(&b.without_attr));
+        for c in all_children.iter() {
             c.without_attr.hash(&mut without_attr_hasher);
+        }
+
+        // And by without_text
+        all_children.sort_by(|&a, &b| a.without_text.cmp(&b.without_text));
+        for c in all_children.iter() {
             c.without_text.hash(&mut without_text_hasher);
         }
 
