@@ -39,7 +39,7 @@ impl ViewBoxValue {
 
     pub fn to_string(&self) -> String {
         format!(
-            "matrix({} {} {} {})",
+            "{} {} {} {}",
             self.view_box.x, self.view_box.y, self.view_box.w, self.view_box.h
         )
     }
