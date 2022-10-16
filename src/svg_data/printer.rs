@@ -48,7 +48,13 @@ fn build_doc(svg: &SVGWithIDs) -> svg::Document {
 pub fn print_svg(svg: &SVGWithIDs, overwrite_view_box: Option<&svgtypes::ViewBox>) -> String {
     let mut doc = build_doc(svg);
     if let Some(view_box) = overwrite_view_box {
-        doc.assign("viewBox", format!("{} {} {} {}", view_box.x, view_box.y, view_box.w, view_box.h));
+        doc.assign(
+            "viewBox",
+            format!(
+                "{} {} {} {}",
+                view_box.x, view_box.y, view_box.w, view_box.h
+            ),
+        );
     };
     doc.to_string()
 }

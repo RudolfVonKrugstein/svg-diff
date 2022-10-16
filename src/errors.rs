@@ -10,5 +10,6 @@ error_chain! {
         JSON(::serde_json::Error);
         IO(::std::io::Error);
         SVGTYPE(::svgtypes::Error);
+        SVGTYPEVIEWBOX(::svgtypes::ViewBoxError);
     }
 }

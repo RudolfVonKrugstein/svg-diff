@@ -116,7 +116,10 @@ async fn new_git_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpRespo
     };
     let res = git_graph_to_svg::parse_git_instructions(input.as_str());
     let res = match res {
-        Ok(m) => git_graph_to_svg::print_pikchr(&git_graph_to_svg::model::View::from_state(&m), &LayoutOptions::default()),
+        Ok(m) => git_graph_to_svg::print_pikchr(
+            &git_graph_to_svg::model::View::from_state(&m),
+            &LayoutOptions::default(),
+        ),
         Err(e) => return HttpResponse::BadRequest().body(e.to_string()),
     };
     let res = match res {
