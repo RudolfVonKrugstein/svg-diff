@@ -34,9 +34,10 @@ flange-flat-tree = "0.2"
 napi-build = "2"
 
 [dev-dependencies]
+git-graph-to-svg = { git = "https://github.com/RudolfVonKrugstein/git-graph-to-svg.git" }
+
 pikchr = "0"
 actix-web = "4"
 actix-files = "0"
-
 [features]
 node = []
