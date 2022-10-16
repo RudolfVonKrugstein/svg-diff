@@ -109,8 +109,8 @@ fn set_matching_ids_rec(
     let criteria_functions: Vec<fn(&TreeHash, &TreeHash) -> bool> = vec![
         |o, t| o.eq_all(t),
         |o, t| o.eq_with_reorder(t),
-        |o, t| o.eq_without_text(t),
         |o, t| o.eq_without_attr(t),
+        |o, t| o.eq_without_text(t),
         |o, t| o.eq_only_tag(t),
     ];
     // Find the child matches by all hashes
