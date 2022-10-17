@@ -226,7 +226,7 @@ impl PathValue {
 
     pub fn to_hashable_string(&self, with_pos: bool) -> String {
         let mut res = "".to_string();
-        for seg in self.segments.iter().take(if with_pos { 0 } else { 1 }) {
+        for seg in self.segments.iter().skip(if with_pos { 0 } else { 1 }) {
             res.push_str(
                 match seg {
                     PathSegment::MoveTo { abs, x, y } => {
