@@ -4,6 +4,7 @@ use std::cmp::{max, max_by, min, min_by};
 use std::str::FromStr;
 
 use super::step::DiffStep;
+use crate::config::MatchingRules;
 use crate::diff::hashmap_diff::HashMapDiff;
 use crate::diff::matching_ids::{get_matching_ids, MatchingIdGenerator};
 use crate::errors::*;
@@ -16,7 +17,8 @@ pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (SVGWithIDs, SVGWithIDs, Ve
 
     // Match using tagging ids
     let mut g = MatchingIdGenerator::new();
-    let (origin_with_states, target_with_states) = get_matching_ids(origin, target, &mut g);
+    let (origin_with_states, target_with_states) =
+        get_matching_ids(origin, target, &MatchingRules::default(), &mut g);
 
     // Build the svg with ids
     // let origin_with_ids = origin.with_ids(&origin_ids);
@@ -201,12 +203,12 @@ pub fn diff_from_strings(svg_strings: &[String]) -> Result<(Vec<String>, Vec<Vec
     let svgs = svgs?;
 
     // Create the diffs!
-    let (svg_with_ids, diff, viewBox) = diffs(&svgs, None);
+    let (svg_with_ids, diff, view_box) = diffs(&svgs, None);
 
     // Create result svgs
     let mut res_svgs = Vec::new();
     for svg in svg_with_ids.into_iter() {
-        res_svgs.push(print_svg(&svg, Some(&viewBox)));
+        res_svgs.push(print_svg(&svg, Some(&view_box)));
     }
 
     Ok((res_svgs, diff))

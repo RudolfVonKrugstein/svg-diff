@@ -1,3 +1,4 @@
+use crate::config::{Config, MatchingRule, MatchingRules};
 use crate::diff::matching_ids::{generator::MatchingIdGenerator, matching_state::MatchingState};
 use crate::svg_data::{SVGWithMatchingState, SVGWithTreeHashSubtree, TreeHash};
 use crate::SVG;
@@ -50,11 +51,12 @@ use log::debug;
 pub(crate) fn get_matching_ids<'a>(
     origin: &'a SVG,
     target: &'a SVG,
+    rule_set: &MatchingRules,
     g: &mut MatchingIdGenerator,
 ) -> (SVGWithMatchingState<'a>, SVGWithMatchingState<'a>) {
     // Generate the treehashes
-    let origin_with_treehash = TreeHash::build_for_svg(origin);
-    let target_with_treehash = TreeHash::build_for_svg(target);
+    let origin_with_treehash = TreeHash::build_for_svg(origin, &rule_set.rules);
+    let target_with_treehash = TreeHash::build_for_svg(target, &rule_set.rules);
 
     // Make space for the result
     let mut origin_ids = vec![None; origin.tags.node_count()];
@@ -64,6 +66,7 @@ pub(crate) fn get_matching_ids<'a>(
         target_with_treehash.root(),
         &mut origin_ids,
         &mut target_ids,
+        rule_set,
         g,
     );
     (
@@ -77,6 +80,7 @@ fn set_matching_ids_rec(
     target: SVGWithTreeHashSubtree,
     origin_ids: &mut Vec<Option<MatchingState>>,
     target_ids: &mut Vec<Option<MatchingState>>,
+    rule_set: &MatchingRules,
     g: &mut MatchingIdGenerator,
 ) {
     // Get the origin tag (which we use as a default)
@@ -105,24 +109,12 @@ fn set_matching_ids_rec(
         // Match 100%
         return;
     }
-    // The criteria functions by decreasing strength
-    let criteria_functions: Vec<fn(&TreeHash, &TreeHash) -> bool> = vec![
-        |o, t| o.eq_all(t),
-        |o, t| o.eq_with_reorder(t),
-        |o, t| o.eq_without_attr(t),
-        |o, t| o.eq_without_text(t),
-        |o, t| o.eq_only_tag(t),
-    ];
     // Find the child matches by all hashes
-    for criteria_function in criteria_functions {
+    for rule_name in &rule_set.priorities {
         while let Some((o_child, t_child)) = find_first_unmatched_child_pairs_that_matches(
-            &origin,
-            &target,
-            origin_ids,
-            target_ids,
-            criteria_function,
+            &origin, &target, origin_ids, target_ids, rule_name,
         ) {
-            set_matching_ids_rec(o_child, t_child, origin_ids, target_ids, g);
+            set_matching_ids_rec(o_child, t_child, origin_ids, target_ids, rule_set, g);
         }
     }
     // The rest remains unmatched
@@ -150,16 +142,13 @@ fn set_matching_ids_rec(
     }
 }
 
-fn find_first_unmatched_child_pairs_that_matches<'a, F>(
+fn find_first_unmatched_child_pairs_that_matches<'a>(
     a: &'a SVGWithTreeHashSubtree<'a>,
     b: &'a SVGWithTreeHashSubtree<'a>,
     origin_ids: &mut Vec<Option<MatchingState>>,
     target_ids: &mut Vec<Option<MatchingState>>,
-    test: F,
-) -> Option<(SVGWithTreeHashSubtree<'a>, SVGWithTreeHashSubtree<'a>)>
-where
-    F: Fn(&TreeHash, &TreeHash) -> bool,
-{
+    rule_name: &String,
+) -> Option<(SVGWithTreeHashSubtree<'a>, SVGWithTreeHashSubtree<'a>)> {
     for a_child in a.children() {
         if origin_ids[a_child.get_pos()].is_some() {
             continue;
@@ -168,7 +157,7 @@ where
             if target_ids[b_child.get_pos()].is_some() {
                 continue;
             };
-            if test(a_child.value().1, b_child.value().1) {
+            if a_child.value().1.eq_rule(rule_name, b_child.value().1) {
                 return Some((a_child, b_child));
             }
         }

@@ -22,7 +22,7 @@ impl Serialize for PathValue {
 #[allow(clippy::derive_hash_xor_eq)]
 impl Hash for PathValue {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.to_hashable_string().hash(state);
+        self.to_hashable_string(true).hash(state);
     }
 }
 
@@ -31,6 +31,10 @@ impl PathValue {
         let p: Vec<PathSegment> =
             PathParser::from(i.as_str()).collect::<Result<Vec<PathSegment>, svgtypes::Error>>()?;
         Ok(PathValue { segments: p })
+    }
+
+    pub fn hash_with_modifier<H: Hasher>(&self, with_pos: bool, hasher: &mut H) {
+        self.to_hashable_string(with_pos).hash(hasher);
     }
 
     pub fn to_string(&self) -> String {
@@ -125,9 +129,9 @@ impl PathValue {
         res.to_string()
     }
 
-    pub fn to_hashable_string(&self) -> String {
+    pub fn to_hashable_string(&self, with_pos: bool) -> String {
         let mut res = "".to_string();
-        for seg in self.segments.iter() {
+        for seg in self.segments.iter().take(if with_pos { 0 } else { 1 }) {
             res.push_str(
                 match seg {
                     PathSegment::MoveTo { abs, x, y } => {

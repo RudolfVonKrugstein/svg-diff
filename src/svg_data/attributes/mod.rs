@@ -64,4 +64,13 @@ impl SVGAttValue {
             SVGAttValue::Path(p) => p.to_string(),
         }
     }
+
+    pub fn hash_with_modifier<H: Hasher>(&self, with_pos: bool, with_style: bool, hasher: &mut H) {
+        match &self {
+            SVGAttValue::String(s) => s.hash(hasher),
+            SVGAttValue::Matrix(m) => m.hash(hasher),
+            SVGAttValue::ViewBox(v) => v.hash(hasher),
+            SVGAttValue::Path(p) => p.hash_with_modifier(with_pos, hasher),
+        }
+    }
 }

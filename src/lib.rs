@@ -20,6 +20,7 @@ extern crate serde_json;
 extern crate svg;
 extern crate svgtypes;
 
+mod config;
 mod diff;
 mod errors;
 mod svg_data;

@@ -61,8 +61,8 @@ impl MatchingState {
         default_id: Option<String>,
     ) -> MatchingState {
         let no_changes = hash.eq_all(o_hash);
-        let subtree_changes = !no_changes;
-        let internal_changes = !hash.eq_without_subtree(o_hash);
+        let subtree_changes = !hash.eq_all_subtrees(o_hash);
+        let internal_changes = !hash.eq_all_without_subtrees(o_hash);
         MatchingState {
             matching_id: g.next(default_id),
             origin_index: Some(origin_index),

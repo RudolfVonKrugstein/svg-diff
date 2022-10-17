@@ -1,9 +1,12 @@
-use flange_flat_tree::Tree;
+use flange_flat_tree::{Subtree, Tree};
 
+use crate::config::{Config, MatchingRule};
 use crate::svg_data::Tag;
 use crate::SVG;
 use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
+use std::ptr::hash;
 
 use super::svg::SVGWithTreeHash;
 
@@ -14,84 +17,141 @@ use super::svg::SVGWithTreeHash;
 #[derive(Debug, Clone)]
 pub struct TreeHash {
     all: u64,
-    with_reorder: u64,
-    without_attr: u64,
-    without_text: u64,
-    without_subtree: u64,
-    only_tag: u64,
+    all_subtrees: u64,
+    all_without_subtrees: u64,
+    rules: HashMap<String, u64>,
 }
 
 impl TreeHash {
-    pub fn build_for_svg(svg: &SVG) -> SVGWithTreeHash {
-        svg.tags
-            .depth_first_flange(|t, children| TreeHash::new(t, &children))
+    pub fn build_for_svg<'a>(svg: &'a SVG, rules: &Vec<MatchingRule>) -> SVGWithTreeHash<'a> {
+        let mut res = svg
+            .tags
+            .depth_first_flange(|t, children| TreeHash::new(t, &children));
+        for rule in rules {
+            svg.tags.get_nav().for_each_depth_first(|i, a| {
+                let tag = svg.tags.at_pos(i).value();
+                let prev_sibling = res.get_nav().prev_sibling(i).map(|s| res.get_flange(s));
+                let next_sibling = res.get_nav().next_sibling(i).map(|s| res.get_flange(s));
+                let children = res
+                    .get_nav()
+                    .children(i)
+                    .iter()
+                    .map(|s| res.get_flange(*s))
+                    .collect();
+                let val = TreeHash::calc_hash(rule, &tag, &children, prev_sibling, next_sibling);
+                if let Some(v) = val {
+                    res.get_flange_mut(i).rules.insert(rule.name.clone(), v);
+                }
+            });
+        }
+        res
+    }
+
+    fn get_sibling_value(sibling: &Option<&TreeHash>, rule: &String) -> Option<u64> {
+        sibling.and_then(|s| s.rules.get(rule)).cloned()
+    }
+
+    pub fn calc_hash(
+        rule: &MatchingRule,
+        tag: &Tag,
+        children: &Vec<&TreeHash>,
+        prev_sibling: Option<&TreeHash>,
+        next_sibling: Option<&TreeHash>,
+    ) -> Option<u64> {
+        // Check if the rule should be applied to us
+        if !rule.applies_to_tag(tag) {
+            return None;
+        }
+        let mut hasher = DefaultHasher::new();
+        // Check if the rule does not apply to use because we don't have the siblings
+        if let Some(prev_rule) = &rule.prev_sibling_rule {
+            if let Some(value) = Self::get_sibling_value(&prev_sibling, prev_rule) {
+                value.hash(&mut hasher);
+            } else {
+                return None;
+            }
+        };
+        if let Some(next_rule) = &rule.next_sibling_rule {
+            if let Some(value) = Self::get_sibling_value(&next_sibling, next_rule) {
+                value.hash(&mut hasher);
+            } else {
+                return None;
+            }
+        };
+        // Now apply the tag itself
+        tag.name.hash(&mut hasher);
+        // Text?
+        if rule.include_text {
+            tag.text.hash(&mut hasher);
+        }
+        // Children?
+        if rule.recursive {
+            // Which rule for children? Default to myself!
+            let mut child_rule = rule.childrens_rule.as_ref().unwrap_or(&rule.name);
+            let mut child_values = Vec::with_capacity(children.len());
+            for child in children {
+                child_values.push(child.rules.get(child_rule).unwrap().clone());
+            }
+            // Should the children be sorted?
+            if rule.sort_children {
+                child_values.sort();
+            }
+            for v in child_values {
+                v.hash(&mut hasher);
+            }
+        }
+        // Sort the attributes
+        let attritbutes = rule.included_sorted_attr(tag);
+        for attribute in attritbutes {
+            tag.args.get(attribute).unwrap().hash_with_modifier(
+                rule.attr.with_pos,
+                rule.attr.with_style,
+                &mut hasher,
+            );
+            attribute.hash(&mut hasher);
+        }
+        Some(hasher.finish())
     }
 
     fn empty() -> TreeHash {
         TreeHash {
             all: 0,
-            with_reorder: 0,
-            without_attr: 0,
-            without_text: 0,
-            without_subtree: 0,
-            only_tag: 0,
+            all_subtrees: 0,
+            all_without_subtrees: 0,
+            rules: HashMap::new(),
         }
     }
 
     fn new(tag: &Tag, children: &Vec<&TreeHash>) -> TreeHash {
         // Create the hasher
-        let mut only_tag_hasher = DefaultHasher::new();
-        tag.name.hash(&mut only_tag_hasher);
-        let mut all_hasher = only_tag_hasher.clone();
-        let mut without_text_hasher = all_hasher.clone();
-        tag.text.hash(&mut all_hasher);
-        let mut without_attr_hasher = all_hasher.clone();
-        let mut with_reorder_hasher = all_hasher.clone();
-        let mut without_subtree_hasher = all_hasher.clone();
-
-        // children without reorder
-        for &c in children {
-            c.all.hash(&mut all_hasher);
-        }
-
-        // Sort the children by "with_reorder"
-        let mut all_children = children.clone();
-        all_children.sort_by(|&a, &b| a.with_reorder.cmp(&b.with_reorder));
-        for c in all_children.iter() {
-            c.with_reorder.hash(&mut with_reorder_hasher);
-        }
-
-        // And by without_attr
-        all_children.sort_by(|&a, &b| a.without_attr.cmp(&b.without_attr));
-        for c in all_children.iter() {
-            c.without_attr.hash(&mut without_attr_hasher);
-        }
-
-        // And by without_text
-        all_children.sort_by(|&a, &b| a.without_text.cmp(&b.without_text));
-        for c in all_children.iter() {
-            c.without_text.hash(&mut without_text_hasher);
-        }
-
-        // Sort the attributes
-        let mut attr_keys: Vec<&String> = tag.args.keys().collect();
-        attr_keys.sort();
-
-        // Hash the attributes
-        for &attr_key in &attr_keys {
-            tag.args[attr_key].hash(&mut all_hasher);
-            tag.args[attr_key].hash(&mut with_reorder_hasher);
-            tag.args[attr_key].hash(&mut without_subtree_hasher);
-            tag.args[attr_key].hash(&mut without_text_hasher);
-        }
+        let all =
+            Self::calc_hash(&MatchingRule::new_all_rule(), tag, children, None, None).unwrap();
+        let all_subtrees = Self::calc_hash(
+            &MatchingRule::new_all_subtrees_rule(),
+            tag,
+            children,
+            None,
+            None,
+        )
+        .unwrap();
+        let all_without_subtrees = Self::calc_hash(
+            &MatchingRule::new_all_without_subtrees_rule(),
+            tag,
+            children,
+            None,
+            None,
+        )
+        .unwrap();
+        let mut rules = HashMap::new();
+        rules.insert("all".to_string(), all);
+        rules.insert("all_subtrees".to_string(), all_subtrees);
+        rules.insert("all_without_subtrees".to_string(), all_without_subtrees);
 
         TreeHash {
-            all: all_hasher.finish(),
-            without_text: without_text_hasher.finish(),
-            without_attr: without_attr_hasher.finish(),
-            with_reorder: with_reorder_hasher.finish(),
-            without_subtree: without_subtree_hasher.finish(),
-            only_tag: only_tag_hasher.finish(),
+            all,
+            all_subtrees,
+            all_without_subtrees,
+            rules,
         }
     }
 
@@ -99,24 +159,21 @@ impl TreeHash {
         self.all.eq(&o.all)
     }
 
-    pub fn eq_without_text(&self, o: &TreeHash) -> bool {
-        self.without_text.eq(&o.without_text)
+    pub fn eq_all_subtrees(&self, o: &TreeHash) -> bool {
+        self.all_subtrees.eq(&o.all_subtrees)
     }
 
-    pub fn eq_without_attr(&self, o: &TreeHash) -> bool {
-        self.without_attr.eq(&o.without_attr)
+    pub fn eq_all_without_subtrees(&self, o: &TreeHash) -> bool {
+        self.all_without_subtrees.eq(&o.all_without_subtrees)
     }
 
-    pub fn eq_with_reorder(&self, o: &TreeHash) -> bool {
-        self.with_reorder.eq(&o.with_reorder)
-    }
-
-    pub fn eq_without_subtree(&self, o: &TreeHash) -> bool {
-        self.without_subtree.eq(&o.without_subtree)
-    }
-
-    pub fn eq_only_tag(&self, o: &TreeHash) -> bool {
-        self.only_tag.eq(&o.only_tag)
+    pub fn eq_rule(&self, name: &String, o: &TreeHash) -> bool {
+        if let Some(my_value) = self.rules.get(name) {
+            if let Some(o_value) = o.rules.get(name) {
+                return my_value.eq(o_value);
+            }
+        }
+        false
     }
 }
 
@@ -139,8 +196,8 @@ mod test {
         let a = TreeHash::new(&tag_a, &vec![]);
         let b = TreeHash::new(&tag_b, &vec![]);
         assert!(!a.eq_all(&b));
-        assert!(!a.eq_with_reorder(&b));
-        assert!(!a.eq_without_attr(&b));
+        assert!(!a.eq_rule(&"with_reorder".to_string(), &b));
+        assert!(!a.eq_rule(&"without_attr".to_string(), &b));
     }
 
     #[test]
@@ -160,8 +217,8 @@ mod test {
         let a = TreeHash::new(&tag_a, &vec![]);
         let b = TreeHash::new(&tag_b, &vec![]);
         assert!(!a.eq_all(&b));
-        assert!(!a.eq_with_reorder(&b));
-        assert!(a.eq_without_attr(&b));
+        assert!(!a.eq_rule(&"with_reorder".to_string(), &b));
+        assert!(a.eq_rule(&"without_attr".to_string(), &b));
     }
 
     #[test]
@@ -178,8 +235,8 @@ mod test {
         let a = &TreeHash::new(&tag_a, &vec![]);
         let b = TreeHash::new(&tag_b, &vec![&TreeHash::new(&tag_child, &vec![])]);
         assert!(!a.eq_all(&b));
-        assert!(!a.eq_with_reorder(&b));
-        assert!(!a.eq_without_attr(&b));
+        assert!(!a.eq_rule(&"with_reorder".to_string(), &b));
+        assert!(!a.eq_rule(&"without_attr".to_string(), &b));
     }
 
     #[test]
@@ -195,8 +252,8 @@ mod test {
         let a = TreeHash::new(&tag_a, &vec![&TreeHash::new(&tag_child, &vec![])]);
         let b = TreeHash::new(&tag_b, &vec![&TreeHash::new(&tag_child, &vec![])]);
         assert!(a.eq_all(&b));
-        assert!(a.eq_with_reorder(&b));
-        assert!(a.eq_without_attr(&b));
+        assert!(a.eq_rule(&"with_reorder".to_string(), &b));
+        assert!(a.eq_rule(&"without_attr".to_string(), &b));
     }
 
     #[test]
@@ -230,7 +287,7 @@ mod test {
             ],
         );
         assert!(!a.eq_all(&b));
-        assert!(a.eq_with_reorder(&b));
-        assert!(a.eq_without_attr(&b));
+        assert!(a.eq_rule(&"with_reorder".to_string(), &b));
+        assert!(a.eq_rule(&"without_attr".to_string(), &b));
     }
 }
