@@ -1,7 +1,7 @@
+use error_chain::bail;
 use serde::{Serialize, Serializer};
 use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
-use error_chain::bail;
 use svgtypes;
 use svgtypes::{PathParser, PathSegment};
 
@@ -35,8 +35,12 @@ impl PathValue {
         // Convert the segments to relative
         let mut new_segs = Vec::new();
         if let Some(first) = p.first() {
-            if let PathSegment::MoveTo {abs, x, y} = first {
-                new_segs.push(PathSegment::MoveTo {abs: true, x: *x, y: *y});
+            if let PathSegment::MoveTo { abs, x, y } = first {
+                new_segs.push(PathSegment::MoveTo {
+                    abs: true,
+                    x: *x,
+                    y: *y,
+                });
                 let mut last_pos = (*x, *y);
                 for seg in p.into_iter().skip(1) {
                     let (new_seg, lp) = Self::relative_path_segment(seg, last_pos);
@@ -44,7 +48,7 @@ impl PathValue {
                     new_segs.push(new_seg);
                 }
             } else {
-                return bail!("path does not begin with move to")
+                return bail!("path does not begin with move to");
             }
         }
         Ok(PathValue { segments: new_segs })
