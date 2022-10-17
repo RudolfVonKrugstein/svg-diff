@@ -79,9 +79,15 @@ impl SVG {
                 Event::Text(t) => {
                     tags.get_mut(current_index).unwrap().text = t.to_string();
                 }
-                Event::Comment => {}
-                Event::Declaration => panic!("1"),
-                Event::Instruction => panic!("!"),
+                Event::Comment => {
+                    log::info!("ignoring comment")
+                }
+                Event::Declaration => {
+                    log::warn!("ignoring declaration")
+                },
+                Event::Instruction => {
+                    log::warn!("ignoring instruction")
+                }
             }
         }
         Ok(SVG { tags: tags.build() })
