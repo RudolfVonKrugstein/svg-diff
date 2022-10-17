@@ -1,6 +1,6 @@
 use flange_flat_tree::{Subtree, Tree};
 use std::cmp::Ordering::Equal;
-use std::cmp::{max, max_by, min, min_by};
+use std::cmp::{max_by, min_by};
 use std::str::FromStr;
 
 use super::step::DiffStep;
@@ -159,7 +159,7 @@ pub fn diffs(
             let svg_viewbox = svgtypes::ViewBox::from_str(
                 svg.tags.root().value().args["viewBox"].to_string().as_str(),
             )
-            .unwrap_or(all_viewbox.clone());
+            .unwrap_or(all_viewbox);
             let x_start = min_by(all_viewbox.x, svg_viewbox.x, |a, b| {
                 a.partial_cmp(b).unwrap_or(Equal)
             });

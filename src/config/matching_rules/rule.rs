@@ -174,31 +174,20 @@ impl MatchingRule {
                 return false;
             }
         }
-        return !self.dont_apply_to_tags.contains(&tag.name.to_string());
+        !self.dont_apply_to_tags.contains(&tag.name.to_string())
     }
 
-    fn attr_is_excluded(&self, attr: &String) -> bool {
+    fn attr_is_excluded(&self, attr: &str) -> bool {
         if self.attr.exclude_attr.contains(attr) {
             return true;
         }
-        if !self.attr.with_pos {
-            if [
-                "x".to_string(),
-                "y".to_string(),
-                "cx".to_string(),
-                "cy".to_string(),
-            ]
-            .contains(attr)
-            {
-                return true;
-            }
+        if !self.attr.with_pos && ["x", "y", "cx", "cy"].contains(&attr) {
+            return true;
         }
-        if !self.attr.with_style {
-            if ["fill".to_string(), "stroke".to_string()].contains(attr) {
-                return true;
-            }
+        if !self.attr.with_style && ["fill", "stroke"].contains(&attr) {
+            return true;
         }
-        return false;
+        false
     }
 
     pub fn included_sorted_attr<'a>(&self, tag: &'a Tag) -> Vec<&'a String> {

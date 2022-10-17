@@ -1,5 +1,6 @@
 use crate::errors::*;
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 use svgtypes::Transform;
@@ -14,16 +15,19 @@ pub struct MatrixValue {
     f: f64,
 }
 
-impl MatrixValue {
-    pub fn to_string(&self) -> String {
-        format!(
+impl Display for MatrixValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "matrix({},{},{},{},{},{})",
             self.a, self.b, self.c, self.d, self.e, self.f
         )
     }
+}
 
-    pub fn from_string(input: &String) -> Result<MatrixValue> {
-        let t = Transform::from_str(input.as_str())?;
+impl MatrixValue {
+    pub fn from_string(input: &str) -> Result<MatrixValue> {
+        let t = Transform::from_str(input)?;
         Ok(MatrixValue {
             a: t.a,
             b: t.b,

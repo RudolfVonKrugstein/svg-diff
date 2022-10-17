@@ -1,4 +1,4 @@
-use crate::config::{Config, MatchingRule, MatchingRules};
+use crate::config::MatchingRules;
 use crate::diff::matching_ids::{generator::MatchingIdGenerator, matching_state::MatchingState};
 use crate::svg_data::{SVGWithMatchingState, SVGWithTreeHashSubtree, TreeHash};
 use crate::SVG;
@@ -147,7 +147,7 @@ fn find_first_unmatched_child_pairs_that_matches<'a>(
     b: &'a SVGWithTreeHashSubtree<'a>,
     origin_ids: &mut Vec<Option<MatchingState>>,
     target_ids: &mut Vec<Option<MatchingState>>,
-    rule_name: &String,
+    rule_name: &str,
 ) -> Option<(SVGWithTreeHashSubtree<'a>, SVGWithTreeHashSubtree<'a>)> {
     for a_child in a.children() {
         if origin_ids[a_child.get_pos()].is_some() {

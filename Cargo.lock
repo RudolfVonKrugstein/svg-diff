@@ -491,9 +491,9 @@ dependencies = [
 
 [[package]]
 name = "flange-flat-tree"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59650d446a354bea8180cc995103bc64cfcc97e18158c4b5060187d25e0cc6f0"
+checksum = "5bc493994d8ed2ad1bdbfff62b79a457b5a852a2d26cd64286f8e69084a2b55f"
 
 [[package]]
 name = "flate2"

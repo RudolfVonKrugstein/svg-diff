@@ -1,5 +1,6 @@
+use std::fmt::{Display, Formatter};
 use crate::errors::*;
-use serde::{ser, Serialize, Serializer};
+use serde::{Serialize, Serializer};
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
@@ -31,14 +32,16 @@ impl Hash for ViewBoxValue {
 }
 
 impl ViewBoxValue {
-    pub fn from_string(s: &String) -> Result<ViewBoxValue> {
+    pub fn from_string(s: &str) -> Result<ViewBoxValue> {
         Ok(ViewBoxValue {
-            view_box: svgtypes::ViewBox::from_str(s.as_str())?,
+            view_box: svgtypes::ViewBox::from_str(s)?,
         })
     }
+}
 
-    pub fn to_string(&self) -> String {
-        format!(
+impl Display for ViewBoxValue {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f,
             "{} {} {} {}",
             self.view_box.x, self.view_box.y, self.view_box.w, self.view_box.h
         )

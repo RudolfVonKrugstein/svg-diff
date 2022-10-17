@@ -95,7 +95,7 @@ async fn new_pikchr_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpRe
 
     // Retrieve the old svg
     let (new_svgs, diffs) = {
-        match diff_from_strings(&vec![start_svg, svg]) {
+        match diff_from_strings(&[start_svg, svg]) {
             Ok(r) => r,
             Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
         }
@@ -146,7 +146,7 @@ async fn new_git_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpRespo
 
     // Retrieve the old svg
     let (new_svgs, diffs) = {
-        match diff_from_strings(&vec![start_svg, svg]) {
+        match diff_from_strings(&[start_svg, svg]) {
             Ok(r) => r,
             Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
         }
