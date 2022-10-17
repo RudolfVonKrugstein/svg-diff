@@ -30,12 +30,12 @@ impl Hash for PathValue {
 
 impl PathValue {
     pub fn from_string(i: &str) -> crate::errors::Result<PathValue> {
-        let mut p: Vec<PathSegment> =
+        let p: Vec<PathSegment> =
             PathParser::from(i).collect::<Result<Vec<PathSegment>, svgtypes::Error>>()?;
         // Convert the segments to relative
         let mut new_segs = Vec::new();
         if let Some(first) = p.first() {
-            if let PathSegment::MoveTo { abs, x, y } = first {
+            if let PathSegment::MoveTo { abs: _, x, y } = first {
                 new_segs.push(PathSegment::MoveTo {
                     abs: true,
                     x: *x,
@@ -48,7 +48,7 @@ impl PathValue {
                     new_segs.push(new_seg);
                 }
             } else {
-                return bail!("path does not begin with move to");
+                bail!("path does not begin with move to");
             }
         }
         Ok(PathValue { segments: new_segs })
@@ -198,9 +198,9 @@ impl PathValue {
                             abs: false,
                             rx: rx - last_pos.0,
                             ry: ry - last_pos.1,
-                            x_axis_rotation: x_axis_rotation,
-                            large_arc: large_arc,
-                            sweep: sweep,
+                            x_axis_rotation,
+                            large_arc,
+                            sweep,
                             x: x - last_pos.0,
                             y: y - last_pos.1,
                         },

@@ -145,8 +145,8 @@ fn set_matching_ids_rec(
 fn find_first_unmatched_child_pairs_that_matches<'a>(
     a: &'a SVGWithTreeHashSubtree<'a>,
     b: &'a SVGWithTreeHashSubtree<'a>,
-    origin_ids: &mut Vec<Option<MatchingState>>,
-    target_ids: &mut Vec<Option<MatchingState>>,
+    origin_ids: &mut [Option<MatchingState>],
+    target_ids: &mut [Option<MatchingState>],
     rule_name: &str,
 ) -> Option<(SVGWithTreeHashSubtree<'a>, SVGWithTreeHashSubtree<'a>)> {
     for a_child in a.children() {

@@ -193,13 +193,13 @@ impl MatchingRule {
     pub fn included_sorted_attr<'a>(&self, tag: &'a Tag) -> Vec<&'a String> {
         let mut res = Vec::new();
         if let Some(inc_attr) = &self.attr.included_attr {
-            for (attr, _) in &tag.args {
+            for attr in tag.args.keys() {
                 if inc_attr.contains(attr) && !self.attr_is_excluded(attr) {
                     res.push(attr);
                 }
             }
         } else {
-            for (attr, _) in &tag.args {
+            for attr in tag.args.keys() {
                 if !self.attr_is_excluded(attr) {
                     res.push(attr);
                 }

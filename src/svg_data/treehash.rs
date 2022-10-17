@@ -197,7 +197,7 @@ mod test {
         next: Option<&TreeHash>,
         rules: &Vec<MatchingRule>,
     ) -> TreeHash {
-        let mut res = TreeHash::new(&tag, &children);
+        let mut res = TreeHash::new(tag, &children);
         for rule in rules {
             let v = TreeHash::calc_hash(rule, tag, &children, prev, next);
             if let Some(v) = v {

@@ -153,7 +153,8 @@ pub fn diffs(
     let mut diffs = Vec::new();
 
     // Find the biggest all containing viewbox
-    let mut all_viewbox = min_view_box.unwrap_or(svgtypes::ViewBox::new(0.0, 0.0, 0.0, 0.0));
+    let mut all_viewbox =
+        min_view_box.unwrap_or_else(|| svgtypes::ViewBox::new(0.0, 0.0, 0.0, 0.0));
     for svg in tags {
         if svg.tags.root().value().args.contains_key("viewBox") {
             let svg_viewbox = svgtypes::ViewBox::from_str(
