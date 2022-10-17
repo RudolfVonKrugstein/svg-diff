@@ -186,14 +186,35 @@ impl Default for TreeHash {
 mod test {
     use super::*;
 
+    use crate::config::MatchingRules;
     use std::collections::HashMap;
     use svg::node::Value;
+
+    fn new_treehash_with_rules(
+        tag: &Tag,
+        children: Vec<&TreeHash>,
+        prev: Option<&TreeHash>,
+        next: Option<&TreeHash>,
+        rules: &Vec<MatchingRule>,
+    ) -> TreeHash {
+        let mut res = TreeHash::new(&tag, &children);
+        for rule in rules {
+            let v = TreeHash::calc_hash(rule, tag, &children, prev, next);
+            if let Some(v) = v {
+                res.rules.insert(rule.name.clone(), v);
+            }
+        }
+        res
+    }
+
     #[test]
     fn different_tag() {
         let tag_a = Tag::new("g".to_string(), "".to_string(), HashMap::new()).unwrap();
         let tag_b = Tag::new("circle".to_string(), "".to_string(), HashMap::new()).unwrap();
-        let a = TreeHash::new(&tag_a, &vec![]);
-        let b = TreeHash::new(&tag_b, &vec![]);
+        let a =
+            new_treehash_with_rules(&tag_a, vec![], None, None, &MatchingRules::default().rules);
+        let b =
+            new_treehash_with_rules(&tag_b, vec![], None, None, &MatchingRules::default().rules);
         assert!(!a.eq_all(&b));
         assert!(!a.eq_rule("with_reorder", &b));
         assert!(!a.eq_rule("without_attr", &b));
@@ -213,8 +234,10 @@ mod test {
             HashMap::from([("attr".to_string(), Value::from("value2".to_string()))]),
         )
         .unwrap();
-        let a = TreeHash::new(&tag_a, &vec![]);
-        let b = TreeHash::new(&tag_b, &vec![]);
+        let a =
+            new_treehash_with_rules(&tag_a, vec![], None, None, &MatchingRules::default().rules);
+        let b =
+            new_treehash_with_rules(&tag_b, vec![], None, None, &MatchingRules::default().rules);
         assert!(!a.eq_all(&b));
         assert!(!a.eq_rule("with_reorder", &b));
         assert!(a.eq_rule("without_attr", &b));
@@ -231,8 +254,22 @@ mod test {
         .unwrap();
         let tag_b = Tag::new("g".to_string(), "".to_string(), HashMap::new()).unwrap();
 
-        let a = &TreeHash::new(&tag_a, &vec![]);
-        let b = TreeHash::new(&tag_b, &vec![&TreeHash::new(&tag_child, &vec![])]);
+        let b_child = new_treehash_with_rules(
+            &tag_child,
+            vec![],
+            None,
+            None,
+            &MatchingRules::default().rules,
+        );
+        let a =
+            new_treehash_with_rules(&tag_a, vec![], None, None, &MatchingRules::default().rules);
+        let b = new_treehash_with_rules(
+            &tag_b,
+            vec![&b_child],
+            None,
+            None,
+            &MatchingRules::default().rules,
+        );
         assert!(!a.eq_all(&b));
         assert!(!a.eq_rule("with_reorder", &b));
         assert!(!a.eq_rule("without_attr", &b));
@@ -248,8 +285,27 @@ mod test {
         )
         .unwrap();
         let tag_b = Tag::new("g".to_string(), "".to_string(), HashMap::new()).unwrap();
-        let a = TreeHash::new(&tag_a, &vec![&TreeHash::new(&tag_child, &vec![])]);
-        let b = TreeHash::new(&tag_b, &vec![&TreeHash::new(&tag_child, &vec![])]);
+        let child = new_treehash_with_rules(
+            &tag_child,
+            vec![],
+            None,
+            None,
+            &MatchingRules::default().rules,
+        );
+        let a = new_treehash_with_rules(
+            &tag_a,
+            vec![&child],
+            None,
+            None,
+            &MatchingRules::default().rules,
+        );
+        let b = new_treehash_with_rules(
+            &tag_b,
+            vec![&child],
+            None,
+            None,
+            &MatchingRules::default().rules,
+        );
         assert!(a.eq_all(&b));
         assert!(a.eq_rule("with_reorder", &b));
         assert!(a.eq_rule("without_attr", &b));
@@ -270,20 +326,34 @@ mod test {
             HashMap::from([("attr".to_string(), Value::from("value".to_string()))]),
         )
         .unwrap();
-        let _tag_b = Tag::new("g".to_string(), "".to_string(), HashMap::new()).unwrap();
-        let a = TreeHash::new(
-            &tag_a,
-            &vec![
-                &TreeHash::new(&tag_child1, &vec![]),
-                &TreeHash::new(&tag_child2, &vec![]),
-            ],
+        let tag_b = Tag::new("g".to_string(), "".to_string(), HashMap::new()).unwrap();
+        let child1 = new_treehash_with_rules(
+            &tag_child1,
+            vec![],
+            None,
+            None,
+            &MatchingRules::default().rules,
         );
-        let b = TreeHash::new(
+        let child2 = new_treehash_with_rules(
+            &tag_child2,
+            vec![],
+            None,
+            None,
+            &MatchingRules::default().rules,
+        );
+        let a = new_treehash_with_rules(
             &tag_a,
-            &vec![
-                &TreeHash::new(&tag_child2, &vec![]),
-                &TreeHash::new(&tag_child1, &vec![]),
-            ],
+            vec![&child1, &child2],
+            None,
+            None,
+            &MatchingRules::default().rules,
+        );
+        let b = new_treehash_with_rules(
+            &tag_b,
+            vec![&child2, &child1],
+            None,
+            None,
+            &MatchingRules::default().rules,
         );
         assert!(!a.eq_all(&b));
         assert!(a.eq_rule("with_reorder", &b));

@@ -1,6 +1,6 @@
-use std::fmt::{Display, Formatter};
 use crate::errors::*;
 use serde::{Serialize, Serializer};
+use std::fmt::{Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::str::FromStr;
 
@@ -41,7 +41,8 @@ impl ViewBoxValue {
 
 impl Display for ViewBoxValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f,
+        write!(
+            f,
             "{} {} {} {}",
             self.view_box.x, self.view_box.y, self.view_box.w, self.view_box.h
         )
