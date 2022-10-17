@@ -16,7 +16,7 @@ license = "MIT"
 exclude = [".idea/", "node_modules", "yarn.lock", ".github"]
 
 [dependencies]
-svg = "0.10"
+svg = { git = "https://github.com/RudolfVonKrugstein/svg.git", branch = "feature/store_declarations" }
 svgtypes = "0"
 regex = "1"
 error-chain = "0.12"

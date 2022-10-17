@@ -82,9 +82,9 @@ impl SVG {
                 Event::Comment => {
                     log::info!("ignoring comment")
                 }
-                Event::Declaration => {
-                    log::warn!("ignoring declaration")
-                },
+                Event::Declaration(t) => {
+                    tags.get_mut(current_index).unwrap().text = t.to_string();
+                }
                 Event::Instruction => {
                     log::warn!("ignoring instruction")
                 }
