@@ -95,7 +95,7 @@ jobs:
 
   release:
     name: Release to npmjs.com
-    needs: [check, fmt, clippy, test, check_version]
+    needs: [check, fmt, clippy, test]
     env:
       PROJECT_NAME_UNDERSCORE: svg_diff
     runs-on: ubuntu-latest
