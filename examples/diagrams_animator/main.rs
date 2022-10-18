@@ -4,6 +4,7 @@ extern crate mime;
 extern crate pikchr;
 extern crate serde;
 extern crate serde_json;
+extern crate serde_yaml;
 
 use actix_files::NamedFile;
 use actix_web::{get, post, web, App, HttpResponse, HttpServer, Result};
@@ -14,10 +15,11 @@ use std::sync::Mutex;
 use actix_web::middleware::Logger;
 use actix_web::web::Bytes;
 use git_graph_to_svg::options::layout::LayoutOptions;
-use log::info;
+use log::{info, warn};
 use pikchr::PikchrFlags;
-use serde::Serialize;
-use svg_diff::{diff_from_strings, DiffStep};
+use serde::{Deserialize, Serialize};
+use svg_diff::config::Config;
+use svg_diff::{config::MatchingRule, config::MatchingRules, diff_from_strings, DiffStep};
 
 struct AppState {
     last_svg: Mutex<String>,
@@ -36,6 +38,21 @@ async fn root() -> Result<NamedFile> {
         }
     }
     Ok(NamedFile::open("./index.html")?)
+}
+
+#[get("/default_rules")]
+async fn default_rules() -> Result<NamedFile> {
+    // Serve one of the possible pathes ...
+    for possible_path in &[
+        "./default_matching_rules.yml",
+        "./diagrams_animator/default_matching_rules.yml",
+        "./examples/diagrams_animator/default_matching_rules.yml",
+    ] {
+        if Path::new(possible_path).exists() {
+            return Ok(NamedFile::open(possible_path)?);
+        }
+    }
+    Ok(NamedFile::open("./default_matching_rules.yml")?)
 }
 
 #[get("/js_assets/animator.js")]
@@ -67,14 +84,26 @@ async fn get_svg(data: web::Data<AppState>) -> HttpResponse {
         .body((*old_svg).clone())
 }
 
+#[derive(Deserialize)]
+struct NewDiagramPayload {
+    diagram: String,
+    rules: String,
+    priorities: Vec<String>,
+}
+
 #[post("/new_diagram/pikchr")]
-async fn new_pikchr_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpResponse {
-    // Convert the payload to svg
-    let input = match String::from_utf8(payload.to_vec()) {
-        Ok(s) => s,
+async fn new_pikchr_diagram(
+    payload: web::Json<NewDiagramPayload>,
+    data: web::Data<AppState>,
+) -> HttpResponse {
+    // Parse the rules
+    let rules: Vec<MatchingRule> = match serde_yaml::from_str(&payload.rules) {
+        Ok(r) => r,
         Err(e) => return HttpResponse::BadRequest().body(e.to_string()),
     };
-    let res = pikchr::Pikchr::render(input.as_str(), None, PikchrFlags::default());
+
+    // Convert the payload to svg
+    let res = pikchr::Pikchr::render(&payload.diagram, None, PikchrFlags::default());
     let svg = match res {
         Ok(p) => String::from_utf8(p.bytes().collect()).unwrap(),
         Err(e) => return HttpResponse::BadRequest().body(e),
@@ -95,7 +124,15 @@ async fn new_pikchr_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpRe
 
     // Retrieve the old svg
     let (new_svgs, diffs) = {
-        match diff_from_strings(&[start_svg, svg]) {
+        match diff_from_strings(
+            &[start_svg, svg],
+            &Config {
+                matching: MatchingRules {
+                    rules,
+                    priorities: payload.priorities.clone(),
+                },
+            },
+        ) {
             Ok(r) => r,
             Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
         }
@@ -108,13 +145,18 @@ async fn new_pikchr_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpRe
 }
 
 #[post("/new_diagram/git")]
-async fn new_git_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpResponse {
-    // Convert the payload to svg
-    let input = match String::from_utf8(payload.to_vec()) {
-        Ok(s) => s,
+async fn new_git_diagram(
+    payload: web::Json<NewDiagramPayload>,
+    data: web::Data<AppState>,
+) -> HttpResponse {
+    // Parse the rules
+    let rules: Vec<MatchingRule> = match serde_yaml::from_str(&payload.rules) {
+        Ok(r) => r,
         Err(e) => return HttpResponse::BadRequest().body(e.to_string()),
     };
-    let res = git_graph_to_svg::parse_git_instructions(input.as_str());
+
+    // Convert the payload to svg
+    let res = git_graph_to_svg::parse_git_instructions(&payload.diagram);
     let res = match res {
         Ok(m) => git_graph_to_svg::print_pikchr(
             &git_graph_to_svg::model::View::from_state(&m),
@@ -146,7 +188,15 @@ async fn new_git_diagram(payload: Bytes, data: web::Data<AppState>) -> HttpRespo
 
     // Retrieve the old svg
     let (new_svgs, diffs) = {
-        match diff_from_strings(&[start_svg, svg]) {
+        match diff_from_strings(
+            &[start_svg, svg],
+            &Config {
+                matching: MatchingRules {
+                    rules,
+                    priorities: payload.priorities.clone(),
+                },
+            },
+        ) {
             Ok(r) => r,
             Err(e) => return HttpResponse::InternalServerError().body(e.to_string()),
         }
@@ -185,6 +235,7 @@ async fn main() -> std::io::Result<()> {
             .service(animator_js)
             .service(new_pikchr_diagram)
             .service(new_git_diagram)
+            .service(default_rules)
     })
     .bind(("127.0.0.1", 8080))?
     .run()

@@ -16,6 +16,17 @@
         <option value="pikchr">Pikchr</option>
         <option value="git">Git Graph</option>
     </select>
+    <br/>
+    <br/>
+    <label for="rules">Matching Rules</label>
+    <br/>
+    <textarea id="rules" cols="50" rows="16"></textarea>
+    <br/>
+    <br/>
+    <label for="priorities">Priorities</label>
+    <br/>
+    <textarea id="priorities" cols="50" rows="10"></textarea>
+    <br/>
     <button onclick="next_diagram()">Send</button>
 </div>
 <div style="float: right;">
@@ -25,11 +36,28 @@
 <script>
     load_base_svg("content-container");
 
+    // Load matching rules
+    fetch("./default_rules").then(
+        (resp) => {
+            resp.text().then((t) => {
+                document.getElementById("rules").value = t;
+            })
+        }
+    )
+
     async function next_diagram() {
         const diagram_type = document.getElementById("diagram_type").value;
         let response = await fetch(`./new_diagram/${diagram_type}`, {
             method: 'POST',
-            body: document.getElementById("diagram").value
+            headers: {
+                'Accept': 'application/json, text/plain, */*',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                "diagram": document.getElementById("diagram").value,
+                "rules": document.getElementById("rules").value,
+                "priorities": document.getElementById("priorities").value.split("\n"),
+            })
         });
         if (!response.ok) {
             console.log("error:", await response.text());

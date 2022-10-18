@@ -6,6 +6,7 @@ use actix_files::NamedFile;
 use actix_web::{get, web, App, HttpResponse, HttpServer, Result};
 use std::fs;
 use std::path::Path;
+use svg_diff::config::Config;
 use svg_diff::DiffStep;
 
 #[derive(Clone)]
@@ -95,7 +96,7 @@ async fn main() -> std::io::Result<()> {
         .collect();
 
     // Create the base and diff
-    let (base_svgs, svg_diffs) = svg_diff::diff_from_strings(&svgs).unwrap();
+    let (base_svgs, svg_diffs) = svg_diff::diff_from_strings(&svgs, &Config::default()).unwrap();
 
     // Create state
     let state = AppState {

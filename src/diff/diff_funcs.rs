@@ -4,21 +4,24 @@ use std::cmp::{max_by, min_by};
 use std::str::FromStr;
 
 use super::step::DiffStep;
-use crate::config::MatchingRules;
 use crate::diff::hashmap_diff::HashMapDiff;
 use crate::diff::matching_ids::{get_matching_ids, MatchingIdGenerator};
 use crate::errors::*;
 use crate::svg_data::SVGWithIDs;
-use crate::{print_svg, SVG};
+use crate::{config, print_svg, SVG};
 
-pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (SVGWithIDs, SVGWithIDs, Vec<DiffStep>) {
+pub fn diff<'a>(
+    origin: &'a SVG,
+    target: &'a SVG,
+    config: &'a config::Config,
+) -> (SVGWithIDs, SVGWithIDs, Vec<DiffStep>) {
     // Track the result
     let mut diff = Vec::new();
 
     // Match using tagging ids
     let mut g = MatchingIdGenerator::new();
     let (origin_with_states, target_with_states) =
-        get_matching_ids(origin, target, &MatchingRules::default(), &mut g);
+        get_matching_ids(origin, target, &config.matching, &mut g);
 
     // Build the svg with ids
     // let origin_with_ids = origin.with_ids(&origin_ids);
@@ -145,10 +148,11 @@ pub fn diff<'a>(origin: &'a SVG, target: &'a SVG) -> (SVGWithIDs, SVGWithIDs, Ve
     (origin_with_ids, target_with_ids, diff)
 }
 
-pub fn diffs(
-    tags: &Vec<SVG>,
+pub fn diffs<'a>(
+    tags: &'a Vec<SVG>,
     min_view_box: Option<svgtypes::ViewBox>,
-) -> (Vec<SVGWithIDs>, Vec<Vec<DiffStep>>, svgtypes::ViewBox) {
+    config: &'a config::Config,
+) -> (Vec<SVGWithIDs<'a>>, Vec<Vec<DiffStep>>, svgtypes::ViewBox) {
     let mut svgs = Vec::new();
     let mut diffs = Vec::new();
 
@@ -184,7 +188,8 @@ pub fn diffs(
 
     for index in 0..tags.len() - 1 {
         // We cannot borrow mutable twice, so we do a trick
-        let d: (SVGWithIDs, SVGWithIDs, Vec<DiffStep>) = diff(&tags[index], &tags[index + 1]);
+        let d: (SVGWithIDs, SVGWithIDs, Vec<DiffStep>) =
+            diff(&tags[index], &tags[index + 1], config);
         svgs.push(d.0);
         diffs.push(d.2);
     }
@@ -192,9 +197,12 @@ pub fn diffs(
     (svgs, diffs, all_viewbox)
 }
 
-pub fn diff_from_strings(svg_strings: &[String]) -> Result<(Vec<String>, Vec<Vec<DiffStep>>)> {
+pub fn diff_from_strings(
+    svg_strings: &[String],
+    config: &config::Config,
+) -> Result<(Vec<String>, Vec<Vec<DiffStep>>)> {
     // Convert the input
-    let svgs: crate::errors::Result<Vec<SVG>> = svg_strings
+    let svgs: Result<Vec<SVG>> = svg_strings
         .iter()
         .map(|s| match SVG::parse_svg_string(s.as_str()) {
             Ok(v) => Ok(v),
@@ -204,7 +212,7 @@ pub fn diff_from_strings(svg_strings: &[String]) -> Result<(Vec<String>, Vec<Vec
     let svgs = svgs?;
 
     // Create the diffs!
-    let (svg_with_ids, diff, view_box) = diffs(&svgs, None);
+    let (svg_with_ids, diff, view_box) = diffs(&svgs, None, config);
 
     // Create result svgs
     let mut res_svgs = Vec::new();
@@ -218,6 +226,7 @@ pub fn diff_from_strings(svg_strings: &[String]) -> Result<(Vec<String>, Vec<Vec
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::config::Config;
 
     #[test]
     fn test_remove() {
@@ -234,7 +243,7 @@ mod test {
         .to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target], &Config::default()).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 1);
@@ -260,7 +269,7 @@ mod test {
         "#.to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target], &Config::default()).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 1);
@@ -284,7 +293,7 @@ mod test {
         .to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target], &Config::default()).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 1);
@@ -308,7 +317,7 @@ mod test {
         .to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target], &Config::default()).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 1);
@@ -332,7 +341,7 @@ mod test {
         .to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target], &Config::default()).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 2);
@@ -359,7 +368,7 @@ mod test {
         .to_string();
 
         // Act
-        let (_svgs, diffs) = diff_from_strings(&[origin, target]).unwrap();
+        let (_svgs, diffs) = diff_from_strings(&[origin, target], &Config::default()).unwrap();
 
         // Test
         assert_eq!(diffs[0].len(), 1);

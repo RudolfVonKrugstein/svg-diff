@@ -5,7 +5,7 @@ pub use matching_rules::MatchingRule;
 pub use matching_rules::MatchingRules;
 
 // Get all and all subtrees hashes
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct Config {
-    matching: MatchingRules,
+    pub matching: MatchingRules,
 }

@@ -103,8 +103,8 @@ impl TreeHash {
         let attritbutes = rule.included_sorted_attr(tag);
         for attribute in attritbutes {
             tag.args.get(attribute).unwrap().hash_with_modifier(
-                rule.attr.with_pos,
-                rule.attr.with_style,
+                rule.attr.as_ref().map(|a| a.with_pos).unwrap_or(false),
+                rule.attr.as_ref().map(|a| a.with_style).unwrap_or(false),
                 &mut hasher,
             );
             attribute.hash(&mut hasher);

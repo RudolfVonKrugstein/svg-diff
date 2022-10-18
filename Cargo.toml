@@ -23,6 +23,7 @@ error-chain = "0.12"
 napi = { version = "2", optional = true }
 napi-derive = { version = "2", optional = true }
 serde_json = "1"
+serde_yaml = "0"
 serde = { version = "1", features = ["derive"] }
 log = "0"
 env_logger = "0"

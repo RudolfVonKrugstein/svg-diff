@@ -1,0 +1,7 @@
+- name: "same_text_in_text"
+  apply_to_tags: ["text"]
+  include_text: true
+  recursive: false
+- name: "next_is_same_text"
+  include_text: true
+  next_sibling_rule: "same_text_in_text"

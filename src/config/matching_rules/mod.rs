@@ -5,15 +5,16 @@ pub use rule::MatchingRule;
 
 #[derive(Deserialize)]
 pub struct MatchingRules {
-    pub rules: Vec<rule::MatchingRule>,
+    pub rules: Vec<MatchingRule>,
     pub priorities: Vec<String>,
 }
 
-impl MatchingRules {
-    pub fn default() -> MatchingRules {
+impl Default for MatchingRules {
+    fn default() -> MatchingRules {
         MatchingRules {
             rules: MatchingRule::default_rules(),
             priorities: vec![
+                "next_is_same_text".to_string(),
                 "all".to_string(),
                 "with_reorder".to_string(),
                 "without_attr".to_string(),
