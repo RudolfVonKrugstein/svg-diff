@@ -2,7 +2,6 @@ use crate::config::Config;
 use crate::diff_from_strings;
 use std::collections::HashMap;
 
-
 pub fn svg_diffs(
     svgs_strings: Vec<String>,
     config: Option<String>,
