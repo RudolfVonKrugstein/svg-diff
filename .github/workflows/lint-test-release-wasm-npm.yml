@@ -128,6 +128,8 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Build wasm package
         run: make wasm
+      - name: Rename the npm package
+        run: sed -i 's/"svg-diff"/"svg-diff-wasm"/g' pkg/package.json
       - name: "Store npm token"
         run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> $HOME/.npmrc
         env:

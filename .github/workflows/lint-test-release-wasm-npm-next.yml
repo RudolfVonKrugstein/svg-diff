@@ -114,5 +114,7 @@ jobs:
         run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> $HOME/.npmrc
         env:
           NPM_TOKEN: ${{ secrets.NPMJS_COM_API_TOKEN }}
+      - name: Rename the npm package
+        run: sed -i 's/"svg-diff"/"svg-diff-wasm"/g' pkg/package.json
       - name: 'Publish to npmjs.com'
         run: wasm-pack publish --tag next
