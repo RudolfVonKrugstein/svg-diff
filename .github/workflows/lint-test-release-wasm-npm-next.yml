@@ -93,24 +93,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           files: results.xml
 
-  check_version:
-    name: Check, that the version is correctly setup (with the git tag)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Display the ref
-        run: echo $GITHUB_REF
-      - name: Calculate and compare tag with version
-        run: |
-          export EXPECTED_VERSION=${GITHUB_REF#refs/*/v}
-          export CRATE_VERSION=$(cat Cargo.toml | grep version)
-          export CRATE_VERSION=${CRATE_VERSION#version*=*\"}
-          export CRATE_VERSION=${CRATE_VERSION%\"}
-          echo "Version from tag=${EXPECTED_VERSION}\nVersion in Config.toml=${CRATE_VERSION}"
-          if [ "$EXPECTED_VERSION" != "$CRATE_VERSION" ]; then
-              echo "Version are not equal"
-              exit 1
-          fi
   release:
     name: Release to npmjs.com
     needs: [check, fmt, clippy, test, check_version]
