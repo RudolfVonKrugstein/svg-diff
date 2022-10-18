@@ -64,6 +64,7 @@ and than open http://localhost:8080 in your web browser.
 
 ### Wasm
 
+https://rustwasm.github.io/wasm-pack/installer/
 ```bash
 curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 ```
