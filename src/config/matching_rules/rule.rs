@@ -190,9 +190,9 @@ impl MatchingRule {
             if !attr_opt.with_style && ["fill", "stroke"].contains(&attr) {
                 return true;
             }
-            return false;
+            false
         } else {
-            return true;
+            true
         }
     }
 

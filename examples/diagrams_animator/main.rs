@@ -13,9 +13,9 @@ use std::path::Path;
 use std::sync::Mutex;
 
 use actix_web::middleware::Logger;
-use actix_web::web::Bytes;
+
 use git_graph_to_svg::options::layout::LayoutOptions;
-use log::{info, warn};
+use log::info;
 use pikchr::PikchrFlags;
 use serde::{Deserialize, Serialize};
 use svg_diff::config::Config;
