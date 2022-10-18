@@ -60,6 +60,14 @@ cargo run --example <exmaple-name>
 
 and than open http://localhost:8080 in your web browser.
 
+## Building
+
+### Wasm
+
+```bash
+curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+```
+
 [d3.js]: https://d3js.org/
 [revealjs]: https://revealjs.com/
 [plantUML]: https://plantuml.com/

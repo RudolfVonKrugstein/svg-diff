@@ -4,11 +4,20 @@ extern crate napi;
 #[cfg(feature = "node")]
 extern crate napi_derive;
 
+// Same for wasm
+#[cfg(feature = "wasm")]
+extern crate wasm_bindgen;
+
 // Also only include our napi modules if we build for node
 #[cfg(feature = "node")]
 mod bindings;
 #[cfg(feature = "node")]
 pub use bindings::napi as napi_bindings;
+
+#[cfg(feature = "wasm")]
+mod bindings;
+#[cfg(feature = "wasm")]
+pub use bindings::wasm as wasm_bindings;
 
 // External crates we use
 extern crate error_chain;
