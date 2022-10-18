@@ -9,7 +9,7 @@ extern crate napi_derive;
 extern crate wasm_bindgen;
 
 // Also only include our napi modules if we build for node
-#[cfg(all(feature = "node", feature = "wasm"))]
+#[cfg(any(feature = "node", feature = "wasm"))]
 mod bindings;
 
 #[cfg(feature = "node")]

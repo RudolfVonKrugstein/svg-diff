@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::diff_from_strings;
 use std::collections::HashMap;
-use wasm_bindgen::prelude::*;
+
 
 pub fn svg_diffs(
     svgs_strings: Vec<String>,
