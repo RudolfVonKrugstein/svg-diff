@@ -1,8 +1,8 @@
 use crate::diff_from_strings;
 
+use crate::config::Config;
 use napi_derive::napi;
 use std::collections::HashMap;
-use crate::config::Config;
 
 #[napi]
 fn svg_diffs(svgs_strings: Vec<String>, config: Option<String>) -> HashMap<String, Vec<String>> {

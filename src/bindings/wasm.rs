@@ -1,9 +1,12 @@
-use wasm_bindgen::prelude::*;
-use std::collections::HashMap;
 use crate::config::Config;
 use crate::diff_from_strings;
+use std::collections::HashMap;
+use wasm_bindgen::prelude::*;
 
-pub fn svg_diffs(svgs_strings: Vec<String>, config: Option<String>) -> HashMap<String, Vec<String>> {
+pub fn svg_diffs(
+    svgs_strings: Vec<String>,
+    config: Option<String>,
+) -> HashMap<String, Vec<String>> {
     // Read the config
     let use_config = if let Some(c) = config {
         serde_yaml::from_str(&c).unwrap()
@@ -26,4 +29,3 @@ pub fn svg_diffs(svgs_strings: Vec<String>, config: Option<String>) -> HashMap<S
     );
     res
 }
-
