@@ -110,7 +110,9 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Build wasm package
         run: make wasm
-      - name: 'Publish to npmjs.com'
-        run: wasm-pack publish --tag next
+      - name: "Store npm token"
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> $HOME/.npmrc
         env:
           NPM_TOKEN: ${{ secrets.NPMJS_COM_API_TOKEN }}
+      - name: 'Publish to npmjs.com'
+        run: wasm-pack publish --tag next
