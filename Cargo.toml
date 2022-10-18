@@ -41,4 +41,4 @@ pikchr = "0"
 actix-web = "4"
 actix-files = "0"
 [features]
-node = ["dep:napi", "dep:napi-derive", "dep:napi-build"]
+node = ["napi", "napi-derive", "napi-build"]

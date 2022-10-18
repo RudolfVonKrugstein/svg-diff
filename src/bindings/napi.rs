@@ -1,13 +1,20 @@
-use crate::diff::DiffStep;
 use crate::diff_from_strings;
 
 use napi_derive::napi;
 use std::collections::HashMap;
+use crate::config::Config;
 
 #[napi]
-fn svg_diffs(svgs_strings: Vec<String>) -> HashMap<String, Vec<String>> {
+fn svg_diffs(svgs_strings: Vec<String>, config: Option<String>) -> HashMap<String, Vec<String>> {
+    // Read the config
+    let use_config = if let Some(c) = config {
+        serde_yaml::from_str(&c).unwrap()
+    } else {
+        Config::default()
+    };
+
     // Convert the svgs
-    let sdiff = diff_from_strings(&svgs_strings).unwrap();
+    let sdiff = diff_from_strings(&svgs_strings, &use_config).unwrap();
 
     let mut res = HashMap::new();
     res.insert("svgs".to_string(), sdiff.0);
@@ -16,7 +23,7 @@ fn svg_diffs(svgs_strings: Vec<String>) -> HashMap<String, Vec<String>> {
         sdiff
             .1
             .iter()
-            .map(|d| DiffStep::write_json(d).unwrap())
+            .map(|d| serde_json::to_string(d).unwrap())
             .collect(),
     );
     res
