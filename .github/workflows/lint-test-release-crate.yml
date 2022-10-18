@@ -103,10 +103,10 @@ jobs:
       - name: Calculate and compare tag with version
         run: |
           export EXPECTED_VERSION=${GITHUB_REF#refs/*/v}
-          export CRATE_VERSION=$(cat Cargo.toml | grep version)
+          export CRATE_VERSION=$(cat Cargo.toml | grep "^version.*$")
           export CRATE_VERSION=${CRATE_VERSION#version*=*\"}
           export CRATE_VERSION=${CRATE_VERSION%\"}
-          echo "Version from tag=${EXPECTED_VERSION}\nVersion in Config.toml=${CRATE_VERSION}"
+          echo "Version from tag=${EXPECTED_VERSION}\nVersion in Config.toml=${CRATE_VERSION}\n"
           if [ "$EXPECTED_VERSION" != "$CRATE_VERSION" ]; then
               echo "Version are not equal"
               exit 1
