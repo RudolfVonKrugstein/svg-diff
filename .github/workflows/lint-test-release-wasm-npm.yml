@@ -129,7 +129,7 @@ jobs:
       - name: Build wasm package
         run: make wasm
       - name: 'Login to npmjs.com'
-        run: wasm-pack login ${NPM_TOKEN}
+        run: wasm-pack login
         env:
           NPM_TOKEN: ${{ secrets.NPMJS_COM_API_TOKEN }}
       - name: 'Publish to npmjs.com'
