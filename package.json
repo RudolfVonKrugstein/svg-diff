@@ -1,12 +1,12 @@
 {
   "name": "svg-diff-node",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "svg-diff - How to get from one SVG to the other?",
   "main": "index.js",
   "repository": "https://github.com/RudolfVonKrugstein/svg-diff.git",
   "license": "MIT",
   "keywords": [
-    "svg", "idf"
+    "svg", "diff"
   ],
   "files": [
     "index.d.ts",

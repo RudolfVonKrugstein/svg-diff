@@ -10,9 +10,9 @@
   "libc": [
     "glibc"
   ],
-  "main": "package-template.linux-arm64-gnu.node",
+  "main": "svg-diff-node.linux-arm64-gnu.node",
   "files": [
-    "package-template.linux-arm64-gnu.node"
+    "svg-diff-node.linux-arm64-gnu.node"
   ],
   "description": "Template project for writing node package with napi-rs",
   "keywords": [

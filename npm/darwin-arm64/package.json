@@ -7,9 +7,9 @@
   "cpu": [
     "arm64"
   ],
-  "main": "package-template.darwin-arm64.node",
+  "main": "svg-diff-node.darwin-arm64.node",
   "files": [
-    "package-template.darwin-arm64.node"
+    "svg-diff-node.darwin-arm64.node"
   ],
   "description": "Template project for writing node package with napi-rs",
   "keywords": [

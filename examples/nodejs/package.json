@@ -1,0 +1,14 @@
+{
+  "name": "svg-diff-nodejs-example",
+  "version": "1.0.0",
+  "description": "Example using svg-diff-node package",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "svg-diff-node": "0.0.1"
+  }
+}

@@ -10,9 +10,9 @@
   "libc": [
     "musl"
   ],
-  "main": "package-template.linux-x64-musl.node",
+  "main": "svg-diff-node.linux-x64-musl.node",
   "files": [
-    "package-template.linux-x64-musl.node"
+    "svg-diff-node.linux-x64-musl.node"
   ],
   "description": "Template project for writing node package with napi-rs",
   "keywords": [
