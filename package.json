@@ -1,12 +1,13 @@
 {
   "name": "svg-diff-node",
-  "version": "0.0.4",
+  "version": "0.0.5-rc1",
   "description": "svg-diff - How to get from one SVG to the other?",
   "main": "index.js",
   "repository": "https://github.com/RudolfVonKrugstein/svg-diff.git",
   "license": "MIT",
   "keywords": [
-    "svg", "diff"
+    "svg",
+    "diff"
   ],
   "files": [
     "index.d.ts",
@@ -95,5 +96,18 @@
     "singleQuote": true,
     "arrowParens": "always"
   },
-  "packageManager": "yarn@3.2.3"
+  "packageManager": "yarn@3.2.3",
+  "optionalDependencies": {
+    "svg-diff-node-win32-x64-msvc": "0.0.5-rc1",
+    "svg-diff-node-darwin-x64": "0.0.5-rc1",
+    "svg-diff-node-linux-x64-gnu": "0.0.5-rc1",
+    "svg-diff-node-linux-x64-musl": "0.0.5-rc1",
+    "svg-diff-node-linux-arm64-gnu": "0.0.5-rc1",
+    "svg-diff-node-win32-ia32-msvc": "0.0.5-rc1",
+    "svg-diff-node-linux-arm-gnueabihf": "0.0.5-rc1",
+    "svg-diff-node-darwin-arm64": "0.0.5-rc1",
+    "svg-diff-node-freebsd-x64": "0.0.5-rc1",
+    "svg-diff-node-linux-arm64-musl": "0.0.5-rc1",
+    "svg-diff-node-win32-arm64-msvc": "0.0.5-rc1"
+  }
 }
