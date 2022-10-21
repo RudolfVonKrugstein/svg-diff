@@ -126,6 +126,13 @@ jobs:
             .cargo-cache
             target/
           key: ${{ matrix.settings.target }}-cargo-registry
+      - name: Cache index.js and index.d.ts
+        uses: actions/cache@v3
+        with:
+          path: |
+            index.js
+            index.d.ts
+          key: ${{ matrix.settings.target }}-index-files
       - name: Cache NPM dependencies
         uses: actions/cache@v3
         with:
@@ -477,8 +484,6 @@ jobs:
             npm-cache-
       - name: Install dependencies
         run: yarn install
-      - name: Build index.js and index.d.ts
-        run: yarn build
       - name: Download all artifacts
         uses: actions/download-artifact@v3
         with:
