@@ -1,0 +1,31 @@
+Arguments: 
+  C:\Program Files\nodejs\node.exe C:\Users\nathan\AppData\Roaming\npm\node_modules\yarn\bin\yarn.js init
+
+PATH: 
+  C:\tools\ruby31\bin;C:\Program Files\Python310\Scripts\;C:\Program Files\Python310\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files (x86)\Gpg4win\..\GnuPG\bin;C:\ProgramData\chocolatey\bin;C:\Program Files\nodejs\;C:\Program Files\Neovim\/bin;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\Program Files\PowerShell\7\;C:\Program Files\dotnet\;C:\Users\nathan\scoop\shims;C:\Users\nathan\.cargo\bin;C:\Users\nathan\AppData\Local\Microsoft\WindowsApps;C:\Users\nathan\AppData\Roaming\npm;C:\Users\nathan\AppData\Local\JetBrains\Toolbox\scripts;C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin;C:\Users\nathan\projects\private\svg-diff\node_modules\.bin
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  16.16.0
+
+Platform: 
+  win32 x64
+
+Trace: 
+  SyntaxError: C:\Users\nathan\projects\private\svg-diff\examples\wasm\package.json: Unexpected end of JSON input
+      at JSON.parse (<anonymous>)
+      at C:\Users\nathan\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:1629:59
+      at Generator.next (<anonymous>)
+      at step (C:\Users\nathan\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:310:30)
+      at C:\Users\nathan\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:321:13
+
+npm manifest: 
+  
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile

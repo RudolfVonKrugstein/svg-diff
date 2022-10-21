@@ -2,7 +2,7 @@
 <head>
     <title>Demo page</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.6.1/d3.min.js" integrity="sha512-MefNfAGJ/pEy89xLOFs3V6pYPs6AmUhXJrRlydI/9wZuGrqxmrdQ80zKHUcyadAcpH67teDZcBeS6oMJLPtTqw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="./../js_assets/animator.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/svg-diff-d3js-animator@latest/bundle.js"></script>
 </head>
 <body>
 <h1>SVG Animation Demo</h1>
@@ -34,7 +34,9 @@
     </div>
 </div>
 <script>
-    load_base_svg("content-container");
+    fetch("./svg").then(
+        (svg) => svg_diff_d3js_animator.load_base_svg("content-container", svg)
+    )
 
     // Load matching rules
     fetch("./default_rules").then(
@@ -65,10 +67,10 @@
         }
         let result = await response.json();
         if (result.svg !== undefined) {
-            await load_base_svg("content-container", result.svg);
+            await svg_diff_d3js_animator.load_base_svg("content-container", result.svg);
         }
         if (result.diffs !== undefined) {
-            apply_animation(result.diffs);
+            await svg_diff_d3js_animator.apply_animation(result.diffs);
         }
     }
 
