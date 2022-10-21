@@ -9,6 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "svg-diff-node": "0.0.1"
+    "svg-diff-node": "0.0.3"
   }
 }
