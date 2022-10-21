@@ -3,7 +3,7 @@ use serde::Deserialize;
 mod rule;
 pub use rule::MatchingRule;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct MatchingRules {
     pub rules: Vec<MatchingRule>,
     pub priorities: Vec<String>,

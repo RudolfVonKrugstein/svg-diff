@@ -1,11 +1,16 @@
 use crate::config::Config;
-use crate::diff_from_strings;
+use crate::{diff_from_strings, DiffStep};
 use std::collections::HashMap;
+
+pub struct JSResult {
+    svgs: Vec<String>,
+    diffs: Vec<Vec<DiffStep>>
+}
 
 pub fn svg_diffs(
     svgs_strings: Vec<String>,
     config: Option<String>,
-) -> HashMap<String, Vec<String>> {
+) -> JSResult {
     // Read the config
     let use_config = if let Some(c) = config {
         serde_yaml::from_str(&c).unwrap()
@@ -16,15 +21,8 @@ pub fn svg_diffs(
     // Convert the svgs
     let sdiff = diff_from_strings(&svgs_strings, &use_config).unwrap();
 
-    let mut res = HashMap::new();
-    res.insert("svgs".to_string(), sdiff.0);
-    res.insert(
-        "diffs".to_string(),
-        sdiff
-            .1
-            .iter()
-            .map(|d| serde_json::to_string(d).unwrap())
-            .collect(),
-    );
-    res
+    JSResult {
+        svgs: sdiff.0,
+        diffs: sdiff.1,
+    }
 }

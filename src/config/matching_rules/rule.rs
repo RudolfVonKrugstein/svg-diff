@@ -6,7 +6,7 @@ fn default_true() -> bool {
     true
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct MatchingAttrRule {
     pub included_attr: Option<HashSet<String>>,
     pub exclude_attr: HashSet<String>,
@@ -16,7 +16,7 @@ pub struct MatchingAttrRule {
     pub with_style: bool,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct MatchingRule {
     pub name: String,
     pub apply_to_tags: Option<HashSet<String>>,

@@ -1,30 +1,36 @@
-use crate::diff_from_strings;
+use crate::{diff_from_strings, DiffStep};
 
-use crate::config::Config;
 use napi_derive::napi;
-use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
 
 #[napi]
-fn svg_diffs(svgs_strings: Vec<String>, config: Option<String>) -> HashMap<String, Vec<String>> {
+#[derive(Serialize, Debug)]
+struct JSResult {
+    svgs: Vec<String>,
+    diffs: Vec<Vec<DiffStep>>
+}
+
+#[napi]
+#[derive(Deserialize, Debug)]
+struct Config {
+    config: Option<crate::config::Config>,
+}
+
+#[napi]
+fn svg_diffs(svg_strings: Vec<String>, config: &Config) -> JSResult {
     // Read the config
-    let use_config = if let Some(c) = config {
-        serde_yaml::from_str(&c).unwrap()
+    let default_config = crate::config::Config::default();
+    let use_config = if let Some(c) = &config.config {
+        c
     } else {
-        Config::default()
+        &default_config
     };
 
     // Convert the svgs
-    let sdiff = diff_from_strings(&svgs_strings, &use_config).unwrap();
+    let sdiff = diff_from_strings(&svg_strings, use_config).unwrap();
 
-    let mut res = HashMap::new();
-    res.insert("svgs".to_string(), sdiff.0);
-    res.insert(
-        "diffs".to_string(),
-        sdiff
-            .1
-            .iter()
-            .map(|d| serde_json::to_string(d).unwrap())
-            .collect(),
-    );
-    res
+    JSResult {
+        svgs: sdiff.0,
+        diffs: sdiff.1,
+    }
 }
