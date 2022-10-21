@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Debug)]
 struct JSResult {
     svgs: Vec<String>,
-    diffs: Vec<Vec<DiffStep>>
+    diffs: Vec<Vec<DiffStep>>,
 }
 
 #[napi]

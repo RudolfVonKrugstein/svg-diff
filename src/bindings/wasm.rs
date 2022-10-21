@@ -4,13 +4,10 @@ use std::collections::HashMap;
 
 pub struct JSResult {
     svgs: Vec<String>,
-    diffs: Vec<Vec<DiffStep>>
+    diffs: Vec<Vec<DiffStep>>,
 }
 
-pub fn svg_diffs(
-    svgs_strings: Vec<String>,
-    config: Option<String>,
-) -> JSResult {
+pub fn svg_diffs(svgs_strings: Vec<String>, config: Option<String>) -> JSResult {
     // Read the config
     let use_config = if let Some(c) = config {
         serde_yaml::from_str(&c).unwrap()
