@@ -1,25 +1,30 @@
 use crate::config::Config;
 use crate::{diff_from_strings, DiffStep};
-use std::collections::HashMap;
+use serde::Serialize;
+use wasm_bindgen::prelude::*;
 
-pub struct JSResult {
-    svgs: Vec<String>,
-    diffs: Vec<Vec<DiffStep>>,
+#[derive(Serialize, Debug)]
+struct JSResult {
+    pub svgs: Vec<String>,
+    pub diffs: Vec<Vec<DiffStep>>,
 }
 
-pub fn svg_diffs(svgs_strings: Vec<String>, config: Option<String>) -> JSResult {
+#[wasm_bindgen]
+pub fn svg_diffs(svgs: JsValue, config: JsValue) -> Result<JsValue, JsValue> {
+    let svgs: Vec<String> = serde_wasm_bindgen::from_value(svgs)?;
+    let config: Option<Config> = serde_wasm_bindgen::from_value(config)?;
     // Read the config
     let use_config = if let Some(c) = config {
-        serde_yaml::from_str(&c).unwrap()
+        c
     } else {
         Config::default()
     };
 
     // Convert the svgs
-    let sdiff = diff_from_strings(&svgs_strings, &use_config).unwrap();
+    let sdiff = diff_from_strings(&svgs, &use_config).map_err(|e| e.to_string())?;
 
-    JSResult {
+    Ok(serde_wasm_bindgen::to_value(&JSResult {
         svgs: sdiff.0,
         diffs: sdiff.1,
-    }
+    })?)
 }

@@ -1,9 +1,9 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 mod rule;
 pub use rule::MatchingRule;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct MatchingRules {
     pub rules: Vec<MatchingRule>,
     pub priorities: Vec<String>,

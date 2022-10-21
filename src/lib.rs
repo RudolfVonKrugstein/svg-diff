@@ -6,6 +6,8 @@ extern crate napi_derive;
 
 // Same for wasm
 #[cfg(feature = "wasm")]
+extern crate serde_wasm_bindgen;
+#[cfg(feature = "wasm")]
 extern crate wasm_bindgen;
 
 // Also only include our napi modules if we build for node
