@@ -79,13 +79,13 @@ impl SVG {
                 Event::Text(t) => {
                     tags.get_mut(current_index).unwrap().text = t.to_string();
                 }
-                Event::Comment => {
+                Event::Comment(_) => {
                     log::info!("ignoring comment")
                 }
                 Event::Declaration(t) => {
                     tags.get_mut(current_index).unwrap().text = t.to_string();
                 }
-                Event::Instruction => {
+                Event::Instruction(_) => {
                     log::warn!("ignoring instruction")
                 }
             }
