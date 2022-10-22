@@ -148,3 +148,5 @@ jobs:
           else
             echo "Not a release, skipping publish"
           fi
+        env:
+          NPM_TOKEN: ${{ secrets.NPMJS_COM_API_TOKEN }}
