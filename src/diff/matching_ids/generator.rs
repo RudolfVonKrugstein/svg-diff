@@ -2,7 +2,7 @@
 //! Whenever a pair of SVG elements is matched
 //! they get a new ID generate by this generator.
 
-use random_string::generate;
+use getrandom::getrandom;
 
 /// Generates IDs for matching SVG elements.
 ///
@@ -22,11 +22,22 @@ pub struct MatchingIdGenerator {
     next_index: u64,
 }
 
+fn random_string(length: usize) -> String {
+    let mut buffer = vec![0u8; length];
+    getrandom(&mut buffer).unwrap();
+    let mut res = String::with_capacity(length);
+    let chars: Vec<char> = "abcdefghijklmnopqrstuvwxyz".chars().collect();
+    for i in 0..length {
+        res.push(chars[(buffer[i] as usize) % chars.len()]);
+    };
+    res
+}
+
 impl MatchingIdGenerator {
     /// New generator, sets the prefix to something random and the id to 0.
     pub fn new() -> MatchingIdGenerator {
         MatchingIdGenerator {
-            prefix: generate(8, "abcdefghijklmnopqrstuvwxyz"),
+            prefix: random_string(8),
             next_index: 0,
         }
     }

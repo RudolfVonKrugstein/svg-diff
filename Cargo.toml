@@ -28,11 +28,11 @@ serde = { version = "1", features = ["derive"] }
 log = "0"
 env_logger = "0"
 mime = "0"
-random-string = "1"
 flange-flat-tree = "0.2"
 wasm-bindgen = { version = "0", optional = true }
 serde-wasm-bindgen = { version = "0", optional = true }
 console_error_panic_hook = {version = "0", optional = true}
+getrandom = { version = "0"}
 
 [build-dependencies]
 napi-build = { version = "2", optional = true }
@@ -45,4 +45,4 @@ actix-web = "4"
 actix-files = "0"
 [features]
 node = ["napi", "napi-derive", "napi-build"]
-wasm = ["wasm-bindgen", "console_error_panic_hook", "serde-wasm-bindgen"]
+wasm = ["wasm-bindgen", "console_error_panic_hook", "serde-wasm-bindgen", "getrandom/js"]

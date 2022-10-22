@@ -23,7 +23,7 @@ pub use bindings::wasm as wasm_bindings;
 // External crates we use
 extern crate error_chain;
 extern crate flange_flat_tree;
-extern crate random_string;
+extern crate getrandom;
 extern crate regex;
 extern crate serde;
 extern crate serde_json;
