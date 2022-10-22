@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>svg-diff WASM test</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.6.1/d3.min.js" integrity="sha512-MefNfAGJ/pEy89xLOFs3V6pYPs6AmUhXJrRlydI/9wZuGrqxmrdQ80zKHUcyadAcpH67teDZcBeS6oMJLPtTqw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg-diff-d3js-animator@latest/bundle.js"></script>
+</head>
+
+<body>
+  <div style="width: 100%">
+    <div style="width: 50%; float: left">
+      <label for="diagram1">Diagram Start</label>
+      <br/>
+      <textarea id="diagram1" cols="50" rows="16"></textarea>
+    </div>
+    <div style="width: 50%; float: right">
+      <label for="diagram2">Diagram End</label>
+      <br/>
+      <textarea id="diagram2" cols="50" rows="16"></textarea>
+    </div>
+  </div>
+  <Button id="animate_button">
+    Animate
+  </Button>
+  <div id="content" style="width: 500px; height: 500px"></div>
+  <script type="module">
+    /**********************************************************
+     * MAIN
+     *********************************************************/
+    // Load the svg-diff wasm es6 module from jsdelivr
+    // `init` for initializing the wasm in the module.
+    // Afterwards `svg_diffs` is available.
+    import init, {svg_diffs} from 'https://cdn.jsdelivr.net/npm/svg-diff-wasm@0.0.6/svg_diff.js';
+
+    // Load the local kroki client for creating diagram svgs
+    import {KrokiDiagram, KrokiClient} from "./kroki-client.js";
+
+    // Initialize svg-diff
+    // You can not use `svg_diffs` before his is done
+    init().then(
+            () => {
+              // Now you can use `svg_diffs`
+              console.log("init done");
+            }
+    )
+
+    // Get a kroki diagram svg from the diagram text
+    async function get_kroki_diagram(text) {
+      let d = new KrokiDiagram("pikchr", "svg", text, {});
+      let c = new KrokiClient();
+
+      const resp = await c.getImage(d, "utf-8");
+      const svg = await resp.text();
+      return svg;
+    }
+
+    // Animate the diagram svg using the diffs
+    // and svg_diff_d3js_animator.
+    async function animate() {
+      // Get the diagram texts
+      const diagram1 = document.getElementById("diagram1").value;
+      const diagram2 = document.getElementById("diagram2").value;
+      // Convert to svg using kroki
+      const svg1 = await get_kroki_diagram(diagram1);
+      const svg2 = await get_kroki_diagram(diagram2);
+      /*********************************************
+       * Use svg_diffs
+       ********************************************/
+      let result = svg_diffs([svg1, svg2], null);
+      // Load the starting svg
+      svg_diff_d3js_animator.load_base_svg("content", result.svgs[0]);
+      // Start the animation
+      svg_diff_d3js_animator.apply_animation(result.diffs[0]);
+    }
+    // Connect the animate function with animation button
+    document.getElementById("animate_button").onclick = animate;
+
+  </script>
+</body>
+
+</html>
