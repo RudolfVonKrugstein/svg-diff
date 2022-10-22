@@ -29,7 +29,7 @@ fn random_string(length: usize) -> String {
     let chars: Vec<char> = "abcdefghijklmnopqrstuvwxyz".chars().collect();
     for i in 0..length {
         res.push(chars[(buffer[i] as usize) % chars.len()]);
-    };
+    }
     res
 }
 
